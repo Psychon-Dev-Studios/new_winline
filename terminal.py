@@ -1,5 +1,5 @@
-VERSION_ID = "2.1.5"
-PATCH_ID = 1
+VERSION_ID = "3.2"
+PATCH_ID = 0
 try:
     import os, sys, shutil, socket, subprocess, time, utilities
     from urllib import request as urlRequest
@@ -34,30 +34,7 @@ YELLOW = "\u001b[1;33m"
 RESET = "\u001b[0m"
 
 CRITICAL_BATTERY = "\u001b[38;5;160m"
-
-# try:
-#     username = os.environ.get("winline_user")
-#     password = os.environ.get("winline_pass")
-# except:
-#     username = ""
-#     password = ""
-
-# if username == None or password == None:
-#     username = input(MAGENTA + "Set username > " + BLUE)
-#     password = input(MAGENTA + "Set password > " + BLUE)
-#     print(RESET) 
-
-#     os.environ["winline_user"] = username
-#     os.environ["winline_pass"] = password
-
-# in_pw = input("Password > ")
-
-# if in_pw == password:
-#     print(DULLYELLOW + "Logged in as " + SPECIALDRIVE + username + RESET)
-
-# else:
-#     print(RED + "This incident has been reported" + RESET)
-#     os.abort()
+DEV_COMPONENT = "\u001b[38;5;129m"
 
 if os.name == "nt":
     DRIVELETTER = str(os.environ['WINDIR'].split(":\\")[0])
@@ -71,9 +48,8 @@ try:
     config = open(DATAPATH + "/config", "r").read() # The file that the config is stored in
     version = open(DATAPATH + "/metadata/version", "r").read()
     # latest = str(urlRequest.urlopen("https://psychon-dev-studios.github.io/winline/metadata/version").read(), "'UTF-8'")
-except: 
-    print(RED + "Can't get latest version - your internet may not be connected" + RESET)
-    time.sleep(2.25)
+except:
+    NotImplemented
 
 ENABLEKEYBOARDINTURRUPT = "keyboardInturruptEnabled: true"
 CMDLINK = "cmdLink: enabled"
@@ -83,9 +59,11 @@ ALLOW_COMPONENTS = "allow_components: true"
 EMULATE_LINUX = "emulate_linux: true"
 SHOW_NAME = "display_username_win: true"
 
-if os.name == "nt":
+if os.name == "nt" and os.path.isfile(sys.path[0] + "/config"):
     if not (EMULATE_LINUX in config):NON_WIN = False;osext=""
     else:NON_WIN = True;osext=" (Linux Emulation)"
+elif not os.path.isfile(sys.path[0] + "/config"):
+    NON_WIN = False;osext=""
 
 print("\a")
 
@@ -187,6 +165,12 @@ if not NON_WIN:
             file.write(uname)
             file.close()
 
+        try:
+            file = open(DATAPATH + "/development_components.txt", "x")
+            file.write(uname)
+            file.close()
+        except:NotImplemented
+
         # try:
         #     file = open(DATAPATH + "/loadedVersion", "x")
         #     file.write(Appversion)
@@ -199,6 +183,8 @@ if not NON_WIN:
         sleep(1)
         print(DULLYELLOW + "To get started, use " + BLUE + "help " + DULLYELLOW + "to list supported commands.\n\n" + RESET)
 
+        config = open(DATAPATH + "/config", "r").read()
+
 else:
     config = "allow_components: true\nkeyboardInturruptEnabled: true\nadvancedMode: enabled\nsysrun_failed_commands: enabled\n"
 
@@ -208,16 +194,14 @@ if not (NON_WIN) and (SHOW_NAME in config):
     except:
         NotImplemented
 
-# loaded = open(DATAPATH + "/loadedVersion", "r")
-
-# if (loaded.read() != Appversion):
-#     print(BLUE + "What's New:" + RESET)
-#     print(BLUE + "- Added CXR command\n- Bug Fixes")
-
 if (ALLOW_COMPONENTS in config):
     if not NON_WIN:
         for add_on in os.listdir(DRIVELETTER + ":/ProgramData/WinLine/components/"):
             if (".py" in add_on):loaded_components.append(add_on.split(".", 1)[0]);enabled_components.append(add_on.split(".", 1)[0])
+        try:
+            if (open(DATAPATH + "/development_components.txt").read() != ""):
+                print(DEV_COMPONENT + "Developer components are installed" + RESET)
+        except:NotImplemented
 else:loaded_components=[];print(RED + "Components have been disabled from the config file" + RESET);os.system("title WinLine %s (components disabled)"%Appversion)
 
 def main():
@@ -244,9 +228,6 @@ def main():
                     print("For more info, warnings, and usage examples, use " + RED + "man secretCommands" + RESET)
 
                 if len(loaded_components) != 0:
-                    # print(YELLOW + "\nCommands provided by addons:" + RESET)
-                    # for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/"):
-                    #     print(BLUE + component.split(".", 1)[0] + RESET)
                     print(YELLOW + "\nAddon components have added additional commands. Use the " + BLUE + "components " + YELLOW + "command to list them" + RESET)
                 elif not (ALLOW_COMPONENTS in config):
                     print(RED + "\nWARNING: Components have been disabled from the config file. Additional features, including component management, are disabled" + RESET)
@@ -757,18 +738,6 @@ def main():
                 else:
                     print(RED + "This feature is only available on Windows" + RESET)
 
-            # elif command == "stress":
-            #     if os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/stress.py"):
-            #         subprocess.call("python %s:/ProgramData/winLine/components/stress.py 9999999 0.0001 100000000000000000"%DRIVELETTER)
-            #     else:
-            #         print(RED + "Component isn't installed" + RESET)
-
-            # elif command == "stress-2":
-            #     if os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/stress_ram.py"):
-            #         subprocess.call("python %s:/ProgramData/winLine/components/stress.py 9999999 0.0001 100000000000000000"%DRIVELETTER)
-            #     else:
-            #         print(RED + "Component isn't installed" + RESET)
-
             elif command == "explorer.exe":
                 if not NON_WIN:
                     print(RED + "Killing explorer...")
@@ -778,58 +747,6 @@ def main():
                     subprocess.run("explorer.exe")
                 else:
                     print(RED + "This feature is only available on Windows")
-
-            # elif command == "share-screen":
-            #     STABLE_PATH = DRIVELETTER + ":/ProgramData/PsychonDevStudios/monitor.stable"
-            #     CANARY_PATH = DRIVELETTER + ":/ProgramData/PsychonDevStudios/monitor.canary"
-
-            #     try:
-            #         os.startfile(STABLE_PATH + "/mirroring_broadcast.py")
-            #         print(SPECIALDRIVE + "Mirroring utility launched (stable)" + RESET)
-            #     except:
-            #         try:
-            #             os.startfile(CANARY_PATH + "/mirroring_broadcast.py")
-            #             print(SPECIALDRIVE + "Mirroring utility launched (canary)" + RESET)
-            #         except:
-            #             print(RED + "No ScreenCast utility installation found. Please run " + BLUE + "install-sc" + RED + " to install ScreenCast." + RESET)
-                
-            # elif command == "install-sc":
-            #     print(SPECIALDRIVE + "Attempting to install ScreenCast (stable version, GitHub)" + RESET)
-
-            #     DOWNLOAD_URL = "https://psychon-dev-studios.github.io/screencast/"
-            #     STABLE_PATH = DRIVELETTER + ":/ProgramData/PsychonDevStudios/monitor.stable"
-            #     CANARY_PATH = DRIVELETTER + ":/ProgramData/PsychonDevStudios/monitor.canary"
-            #     installed = 0
-
-            #     try:import requests
-            #     except: subprocess.call("pip install requests");import requests
-
-            #     try:broadcast = requests.get(DOWNLOAD_URL + "/mirroring_broadcast.py").text
-            #     except:print(RED + "Download 1 of 2 failed (GET broadcast failed)" + RESET);broadcast=None
-            #     try:receive = requests.get(DOWNLOAD_URL + "/mirroring_receiver.pyw").text
-            #     except:print(RED + "Download 2 of 2 failed (GET receiver failed)" + RESET);receive=None
-
-            #     if broadcast != None:
-            #         try:
-            #             bf = open(STABLE_PATH + "/mirroring_broadcast.py", "x")
-            #             bf.write(broadcast)
-            #             bf.close()
-            #             installed += 1
-            #         except:print(RED + "INSTALL broadcast failed" + RESET)
-
-            #     if receive != None:
-            #         try:
-            #             bf = open(STABLE_PATH + "/mirroring_receiver.pyw", "x")
-            #             bf.write(receive)
-            #             bf.close()
-            #             installed += 1
-            #         except:print(RED + "INSTALL receive failed" + RESET)
-
-            #     if installed == 0:
-            #         print(RED + "Nothing was installed" + RESET)
-
-            #     else:
-            #         print(SPECIALDRIVE + "%s of 2 programs installed!"%installed + RESET)
 
             elif command == "I don't want your damn lemons, what am I supposed to do with these?!" or command == "suicide":
                 if not NON_WIN:
@@ -948,48 +865,6 @@ def main():
                     print(os.path.getsize(command.split()[1]))
                 except Exception as err:print(str(err))
 
-            # elif command.split()[0] == "camx" or command.split()[0] == "Camx" or command.split()[0] == "CamX":
-            #     abort = False
-            #     if not (os.path.isfile("%s:/ProgramData/cxr/core.pyw"%DRIVELETTER)) and not ('--dev' in command):
-            #         print(RED + "Please install CamX: Rebirth before using this command" + RESET)
-            #     else:
-            #         launch_in_new_window = False
-            #         try:
-            #             if "--new" in command.split(maxsplit=1)[1]:launch_in_new_window = True
-            #             else:launch_in_new_window = False
-            #             if "--dev" in command.split(maxsplit=1)[1]:launch_dev = True
-            #             else: launch_dev = False
-            #             if "-s" in command.split(maxsplit=1)[1]:
-            #                 abort = True
-            #                 subprocess.run("python3 " + DRIVELETTER + ":/ProgramData/cxr_boot/boot_menu.py")
-            #         except:launch_in_new_window = False;launch_dev = False
-            #         cxrDevLocation.seek(0)
-            #         if not abort:
-            #             try:
-            #                 if (launch_in_new_window == True) and not launch_dev:print("Launching CamX: Rebirth...");os.startfile(DRIVELETTER + ":/ProgramData/cxr/core.pyw")
-            #                 elif (launch_in_new_window == True and launch_dev):
-            #                     if cxrDevLocation.read() != "":print("Launching CamX: Rebirth [Dev] in new window...");cxrDevLocation.seek(0);os.startfile(cxrDevLocation.read())
-            #                     else:
-            #                         new = input("Enter file path, including trailing slash > ")
-            #                         cxrDevLocation.close();cxrDevLocation = open(DATAPATH + "/cxr_dev_path", "w")
-            #                         cxrDevLocation.write(new + "core.pyw")
-            #                         cxrDevLocation.close();cxrDevLocation = open(DATAPATH + "/cxr_dev_path", "r")
-            #                         print("Launching CamX: Rebirth [Dev] in new window...");cxrDevLocation.seek(0);os.startfile(cxrDevLocation.read())
-            #                 elif (launch_dev):
-            #                     if cxrDevLocation.read() != "":print("Launching CamX: Rebirth [Dev]...");cxrDevLocation.seek(0);os.system("python3 " + cxrDevLocation.read())
-            #                     else:
-            #                         new = input("Enter file path, including trailing slash > ")
-            #                         cxrDevLocation.close();cxrDevLocation = open(DATAPATH + "/cxr_dev_path", "w")
-            #                         cxrDevLocation.write(new + "core.pyw")
-            #                         cxrDevLocation.close();cxrDevLocation = open(DATAPATH + "/cxr_dev_path", "r")
-            #                         print("Launching CamX: Rebirth [Dev]...");cxrDevLocation.seek(0);os.system("python3 " + cxrDevLocation.read())
-            #                 else:print("Launching CamX: Rebirth using WinLine container...");os.system("title CamX: Rebirth on WinLine Emulation");time.sleep(3);subprocess.call("python3 %s:/ProgramData/cxr/core.pyw"%DRIVELETTER)
-            #             except FileNotFoundError:
-            #                 print(RED + "Please install CamX: Rebirth" + RESET)
-            #             except Exception as err:
-            #                 print(RED + "Error: " + str(err) + RESET)
-            #         os.system('title WinLine %s'%Appversion)
-
             # elif (command == "components" or command == "addons" or command == "add-ons" or command == "addins" or command == "add-ins" or command == "extensions"):
 
             #     print(YELLOW + "The following components are currently installed:" + RESET)
@@ -1012,6 +887,9 @@ def main():
                     if ("--unload" in flags):
                         try:whatToUnload = command.split(maxsplit=2)[2]
                         except:whatToUnload = "all"
+                        ignore_load_status = open(DATAPATH + "/development_components.txt").read()
+
+                        
 
                         if whatToUnload == "all":
                             print(RED + "Unloading all components..." + RESET)
@@ -1021,20 +899,27 @@ def main():
                                 # print(loaded_components)
                                 time.sleep(0.1)
                         else:
-                            if (whatToUnload in loaded_components):
+                            if (whatToUnload in loaded_components) and not whatToUnload in ignore_load_status:
                                 loaded_components.remove(whatToUnload)
                                 print(DRIVES + "Component unloaded" + RESET)
+                            elif whatToUnload in ignore_load_status:
+                                print(DEV_COMPONENT + "Developer components can't be unloaded" + RESET)
                             elif (whatToUnload in enabled_components):print(RED + "Component already unloaded" + RESET)
+                            
                             else:print(RED + "Component can't be loaded because it's not enabled. Restart WinLine to enable it" + RESET)
 
                     elif "--load" in flags:
                         if (ALLOW_COMPONENTS in config):
                             try:
                                 whatToLoad = command.split(maxsplit=2)[2]
+                                ignore_load_status = open(DATAPATH + "/development_components.txt").read()
 
-                                if (whatToLoad in enabled_components):
+                                if (whatToLoad in enabled_components) and not whatToLoad in ignore_load_status:
                                     loaded_components.append(whatToLoad)
                                     print(DRIVES + "Component loaded" + RESET)
+
+                                elif whatToLoad in ignore_load_status:
+                                    print(DEV_COMPONENT + "Developer components are always loaded" + RESET)
                                 
                                 elif (whatToLoad in loaded_components):
                                     print(YELLOW + "Component is already loaded" + RESET)
@@ -1058,15 +943,20 @@ def main():
 
                     elif "--disable" in flags:
                         whatToDisable = command.split(maxsplit=2)[2]
-                        enabled_components.remove(whatToDisable)
-                        loaded_components.remove(whatToDisable)
-                        print(DRIVES + "Component disabled" + RESET)
+                        if not whatToDisable in open(DATAPATH + "/development_components.txt").read():
+                            enabled_components.remove(whatToDisable)
+                            loaded_components.remove(whatToDisable)
+                            print(DRIVES + "Component disabled" + RESET)
+                        else:
+                            print(DEV_COMPONENT + "Developer components can't be disabled" + RESET)
 
                     elif "--enable" in flags:
                         if (ALLOW_COMPONENTS in config):
                             whatToEnable = command.split(maxsplit=2)[2]
-                            enabled_components.append(whatToEnable)
-                            print(DRIVES + "Component enabled" + RESET)
+                            if whatToEnable in whatToEnable in open(DATAPATH + "/development_components.txt").read():
+                                enabled_components.append(whatToEnable)
+                                print(DRIVES + "Component enabled" + RESET)
+                            else: print(DEV_COMPONENT + "Developer components are always enabled" + RESET)
                         else:
                             print(RED + "Components have been disallowed from the configuration file" + RESET)
 
@@ -1114,18 +1004,29 @@ def main():
                     else:
                         if not (NON_WIN):
                             print(YELLOW + "The following components are currently installed:" + RESET)
+                            dev_components = []
                             for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/"):
                                 # if ".py" in component:
                                     # print(loaded_components)
                                     load_string = ""
+                                    ignore_load_status = open(DATAPATH + "/development_components.txt").read()
 
-                                    if(component.split(".", 1)[0] in loaded_components and component.split(".", 1)[0] in enabled_components):load_string=SPECIALDRIVE+"(loaded)";colorToUse=BLUE
-                                    elif(component.split(".", 1)[0] in enabled_components):load_string="(unloaded)";colorToUse=DRIVES
-                                    elif not (ALLOW_COMPONENTS in config):load_string=(RED + "(disallowed)" + RESET);colorToUse=RED
-                                    elif not (os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s.py"%component)):load_string=RED+"(unsupported format)";colorToUse=DRIVES
-                                    else:load_string=RED+"(unavailable - requires restart)";colorToUse=DRIVES
+                                    if not (component.split(".", 1)[0] in ignore_load_status):
+                                        if(component.split(".", 1)[0] in loaded_components and component.split(".", 1)[0] in enabled_components):load_string=SPECIALDRIVE+"(loaded)";colorToUse=BLUE
+                                        elif(component.split(".", 1)[0] in enabled_components):load_string="(unloaded)";colorToUse=DRIVES
+                                        elif not (ALLOW_COMPONENTS in config):load_string=(RED + "(disallowed)" + RESET);colorToUse=RED
+                                        elif not (os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s.py"%component)):load_string=RED+"(unsupported format)";colorToUse=DRIVES
+                                        else:load_string=RED+"(unavailable - requires restart)";colorToUse=DRIVES
 
-                                    print(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
+                                        print(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
+                                    else:
+                                        load_string=DEV_COMPONENT+"(developer)";colorToUse=DEV_COMPONENT
+                                        dev_components.append(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
+                            
+                            if len(dev_components) != 0:
+                                print("")
+                                for dev_comp in dev_components:
+                                    print(dev_comp)
                     
                     print("")
 
@@ -1182,7 +1083,8 @@ def main():
                     addin_commands = []
 
                 if (command in addin_commands):
-                    if (command in loaded_components):
+                    ignore_load_status = open(DATAPATH + "/development_components.txt").read()
+                    if (command in loaded_components) or (command in ignore_load_status):
                         runIndex = addin_commands.index(command)
                         runCommand = addin_commands[runIndex]
                         # print(DRIVELETTER + ":/ProgramData/winLine/components/%s.py"%runCommand)
