@@ -1,3 +1,7 @@
+[![CodeQL](https://github.com/Psychon-Dev-Studios/new_winline/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Psychon-Dev-Studios/new_winline/actions/workflows/codeql-analysis.yml)
+
+***
+
 # new_winline
 The all-new WinLine: a better terminal for Windows
 
