@@ -167,7 +167,6 @@ if not NON_WIN:
 
         try:
             file = open(DATAPATH + "/development_components.txt", "x")
-            file.write(uname)
             file.close()
         except:NotImplemented
 
@@ -196,8 +195,10 @@ if not (NON_WIN) and (SHOW_NAME in config):
 
 if (ALLOW_COMPONENTS in config):
     if not NON_WIN:
-        for add_on in os.listdir(DRIVELETTER + ":/ProgramData/WinLine/components/"):
-            if (".py" in add_on):loaded_components.append(add_on.split(".", 1)[0]);enabled_components.append(add_on.split(".", 1)[0])
+        try:
+            for add_on in os.listdir(DRIVELETTER + ":/ProgramData/WinLine/components/"):
+                if (".py" in add_on):loaded_components.append(add_on.split(".", 1)[0]);enabled_components.append(add_on.split(".", 1)[0])
+        except:loaded_components=[]
         try:
             if (open(DATAPATH + "/development_components.txt").read() != ""):
                 print(DEV_COMPONENT + "Developer components are installed" + RESET)
@@ -676,12 +677,11 @@ def main():
 
                     if (cont == "Y"):
                         print(RED + "Deleting data..." + RESET)
-                        while (os.path.isdir(DATAPATH)):
-                            try:
-                                shutil.rmtree(DATAPATH)
-                            except Exception as err:
-                                print(str(err))
-                                sleep(1)
+                        try:
+                            shutil.rmtree(DATAPATH, ignore_errors=True)
+                        except Exception as err:
+                            print(str(err))
+                            sleep(1)
 
                         sleep(2.25)
                         os.system('cls')
