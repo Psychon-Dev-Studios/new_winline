@@ -12,3 +12,13 @@ The terminal emulates a lxterm-like environment, sutable for users familiar with
 
 As of version 3.0, WinLine has partial Linux support. Advanced features will be unavailable, and some commands will be blocked.
 
+## FEATURES:
+* Full suite of internal commands
+* Works offline
+* Integrates smoothly with Command Prompt and Powershell
+* Full system command support
+* Supported on Windows and Linux
+* Advanced commands
+* Custom module support (Components)
+* Full custom script support (v3.3 and greater)
+* More features and commands with every update
