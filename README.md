@@ -17,5 +17,5 @@ The terminal emulates a lxterm-like environment, sutable for users familiar with
 * Supported on Windows and Linux
 * Advanced commands
 * Custom module support (Components)
-* Full custom script support (v3.3 and greater)
+  * Also enables custom scripts
 * More features and commands with every update
