@@ -1,12 +1,18 @@
 VERSION_ID = "3.2"
-PATCH_ID = 0
+PATCH_ID = 1
 try:
-    import os, sys, shutil, socket, subprocess, time, utilities
+    import os, sys, shutil, socket, subprocess, time
     from urllib import request as urlRequest
     from threading import Thread as td
     from time import sleep
     if (os.name == "nt"):
         from ctypes import windll
+
+    try:
+        import utilities
+    except:
+        print("Warning: utility pack failed to import. Certain commands will not work correctly")
+        time.sleep(5)
 
 except Exception as err:
     import time
@@ -217,11 +223,11 @@ def main():
 
 
             if (command.lower() == "help"):
-                print(BLUE + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'clock', 'list-drives', 'share-screen', stress, 'stress-2', 'monitor', 'components', 'change-name', 'user'")
-                print("help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nclock: start the clock service, use ctrl+c to resume normal operation.\nlist-drives: lists all drives currently connected to the device\nshare-screen: launch the screenshare utility (requires ScreenCast to be installed)\nstress: run a CPU stress test, usually capable of redlining all CPU cores on reasonable systems\nstress-2: run a RAM stress test, usually capable of redlining RAM and maxing swap\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity" + RESET)
+                print(BLUE + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'clock', 'list-drives', 'share-screen', stress, 'stress-2', 'monitor', 'components', 'change-name', 'user', 'battery-report'")
+                print("help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nclock: start the clock service, use ctrl+c to resume normal operation.\nlist-drives: lists all drives currently connected to the device\nshare-screen: launch the screenshare utility (requires ScreenCast to be installed)\nstress: run a CPU stress test, usually capable of redlining all CPU cores on reasonable systems\nstress-2: run a RAM stress test, usually capable of redlining RAM and maxing swap\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\n" + RESET)
                 # """camx [flags]: launch CamX: Rebirth if installed. use '--new' to launch in a new terminal and '--dev' to launch from a developer installation\n"""
-                if (CMDLINK in config):
-                    print(SPECIALDRIVE + "cmd: directly interface with Windows' command line. Exit cmd with ctrl+c or typing 'exit' to return to WinLine" + RESET)
+                
+                print(SPECIALDRIVE + "cmd: directly interface with Windows' command line. Exit cmd with ctrl+c or typing 'exit' to return to WinLine\npowershell: switch the current WinLine instance to a Powershell terminal. Use 'exit' to return to WinLine" + RESET)
 
 
                 if (ADVANCEDMODE in config):
@@ -619,16 +625,20 @@ def main():
 
 
             elif (command == "cmd"):
-                if (CMDLINK in config):
-                    print("\n" + SPECIALDRIVE + "CMD Link is active\n" + RESET)
+                if not NON_WIN:
+                    os.system('title WinLine %s%s - COMMAND LINE'%(Appversion,osext))
                     subprocess.call("cmd.exe")
-
-                elif not NON_WIN:
-                    print(BLUE + "CommandLink " + RED + "isn't running" + RESET)
-
+                    os.system('title WinLine %s%s'%(Appversion,osext))
                 else:
-                    print(RED + "CommandLink is only available on Windows" + RESET)
-                print("")
+                    print(RED + "This command is only available on Windows" + RESET)
+
+            elif (command == "powershell"):
+                if not NON_WIN:
+                    os.system('title WinLine %s%s - POWERSHELL'%(Appversion,osext))
+                    subprocess.call("powershell")
+                    os.system('title WinLine %s%s'%(Appversion,osext))
+                else:
+                    print(RED + "This command is only available on Windows" + RESET)
 
 
             elif (command.split(maxsplit=1)[0] == "ssh"):
@@ -672,7 +682,7 @@ def main():
             elif (command == "reset-term"):
                 if not NON_WIN:
                     print("")
-                    print(RED + "Warning: Resetting application data will reset all preferences and purge your data. This action CANNOT be undone.")
+                    print(RED + "Warning: Resetting application data will reset all preferences and purge your data. This action CANNOT be undone. THIS WILL ERASE ALL COMPONENTS AND SCRIPTS!")
                     cont = input("Are you sure you want to continue? [Y/N] > " + RESET).capitalize()
 
                     if (cont == "Y"):
@@ -724,7 +734,7 @@ def main():
                     target = command.split(maxsplit=1)[1]
 
                     subprocess.call("attrib +s +h %s"%target)
-                    print(SPECIALDRIVE + "Folder encrypted\n" + RESET)
+                    print(SPECIALDRIVE + "Done\n" + RESET)
 
                 else:
                     print(RED + "This feature is only available on Windows" + RESET)
@@ -734,7 +744,7 @@ def main():
                     target = command.split(maxsplit=1)[1]
 
                     subprocess.call("attrib -s -h %s"%target)
-                    print(SPECIALDRIVE + "Folder decrypted\n" + RESET)
+                    print(SPECIALDRIVE + "Done\n" + RESET)
                 else:
                     print(RED + "This feature is only available on Windows" + RESET)
 
@@ -749,33 +759,34 @@ def main():
                     print(RED + "This feature is only available on Windows")
 
             elif command == "I don't want your damn lemons, what am I supposed to do with these?!" or command == "suicide":
-                if not NON_WIN:
-                    from ctypes import windll
-                    from ctypes import c_int
-                    from ctypes import c_uint
-                    from ctypes import c_ulong
-                    from ctypes import POINTER
-                    from ctypes import byref
+                print(YELLOW + "This command has been removed to protect your computer\n" + RESET)
+                # if not NON_WIN:
+                #     from ctypes import windll
+                #     from ctypes import c_int
+                #     from ctypes import c_uint
+                #     from ctypes import c_ulong
+                #     from ctypes import POINTER
+                #     from ctypes import byref
 
-                    nullptr = POINTER(c_int)()
+                #     nullptr = POINTER(c_int)()
 
-                    windll.ntdll.RtlAdjustPrivilege(
-                        c_uint(19), 
-                        c_uint(1), 
-                        c_uint(0), 
-                        byref(c_int())
-                    )
+                #     windll.ntdll.RtlAdjustPrivilege(
+                #         c_uint(19), 
+                #         c_uint(1), 
+                #         c_uint(0), 
+                #         byref(c_int())
+                #     )
 
-                    windll.ntdll.NtRaiseHardError(
-                        c_ulong(0xC000007B), 
-                        c_ulong(0), 
-                        nullptr, 
-                        nullptr, 
-                        c_uint(6), 
-                        byref(c_uint())
-                    )
-                else:
-                    print(RED + "Unknown command" + RESET)
+                #     windll.ntdll.NtRaiseHardError(
+                #         c_ulong(0xC000007B), 
+                #         c_ulong(0), 
+                #         nullptr, 
+                #         nullptr, 
+                #         c_uint(6), 
+                #         byref(c_uint())
+                #     )
+                # else:
+                #     print(RED + "Unknown command" + RESET)
 
             elif command == "monitor":
                 try:
@@ -842,6 +853,7 @@ def main():
                         # print(RESET + "Disk: " + str(diskUsage.free/1e+9) + " GB /" + str(diskUsage.total/1e+9) + " GB (%s)"%diskUsage.percent)
                         print(RESET + "Battery: " + str(batteryCharge))
                         print(RESET + "Network: " + str(psutil.net_io_counters(pernic=False, nowrap=True).bytes_sent) + " sent, " + str(psutil.net_io_counters(pernic=False, nowrap=True).packets_recv) + " received, " + utilities.colorNetStatus(net_stat, RED, YELLOW, SPECIALDRIVE, RESET))
+                        print(YELLOW + "\nLooking for a battery health report? Run the " + BLUE + "battery-report" + YELLOW + " command instead" + RESET)
                         time.sleep(1)
 
                 except ModuleNotFoundError:
@@ -875,7 +887,15 @@ def main():
             #         else:
             #             print(DRIVES + component.split(".", 1)[0] + " (unloaded)" + RESET)
 
-            #     print("")
+            #     print("") 
+
+            elif command == "battery-report":
+                if NON_WIN:
+                    print(RED + "This feature is only supported on Windows" + RESET)
+                else:
+                    subprocess.call("powercfg /batteryreport /output C:/Users/" + os.getlogin() + "/Downloads/battery_report.html")
+                    print("The report will be opened in your default browser momentarily.")
+                    os.startfile("C:/Users/%s/Downloads/battery_report.html"%os.getlogin())
 
             elif ("components" in command or "component" in command or "addons" in command):
                 if NON_WIN:print(RED + "Warning: Components are not supported on non-Windows systems")
@@ -939,7 +959,7 @@ def main():
 
                     elif "--help" in flags or "-h" in flags:
                         print(YELLOW + "Format: components <option> <addon component>\nDo not supply any options to see a list of components and their status\n\n" + RED + "FLAGS:")
-                        print(DRIVES + "'--unload <addon>' unloads the chosen module. to unload all modules, do not supply an addon name in <addon>\n--'--load <addon>' loads the chosen module, if it's unloaded and available. to load all modules, do not supply an addon name in <addon>" + RESET)
+                        print(DRIVES + "'--unload <addon>' unloads the chosen module. to unload all modules, do not supply an addon name in <addon>\n--'--load <addon>' loads the chosen module, if it's unloaded and available. to load all modules, do not supply an addon name in <addon>\n'--install' opens a file picker to install new components\n'--purge <addon>' uninstalls the chosen addon" + RESET)
 
                     elif "--disable" in flags:
                         whatToDisable = command.split(maxsplit=2)[2]
@@ -989,6 +1009,43 @@ def main():
 
                             else:
                                 print(BLUE + "abort." + RESET)
+
+                        elif "--install" in flags:
+                            try:
+                                import tkinter.filedialog as getFile, tkinter
+
+                                root = tkinter.Tk()
+                                root.wm_geometry("1x1")
+                                root.grid_anchor("center")
+                                root.wm_title("")
+                                # root.iconify()
+
+                                fileToUpload = getFile.askopenfilename(title="Select Component", filetypes=[("Component Files", "*.py")])
+
+                                root.destroy()
+
+                                if (fileToUpload != "" and fileToUpload != None):select_valid = True
+                                else:select_valid = False
+
+                                if (select_valid):
+                                    name = fileToUpload.split("/")[len(fileToUpload.split("/"))-1]
+                                    print(YELLOW + "Installing selected component: %s"%str(name) + RESET)
+
+                                    try:
+                                        shutil.copy(fileToUpload, DATAPATH + "/components/%s"%(name))
+
+
+                                        time.sleep(2)
+                                        print(SPECIALDRIVE + "Component %s installed! Use the 'term -r' command to load it"%(name) + RESET)
+                                    except Exception as err:
+                                        print(RED + "Failed to install the component: " + YELLOW + str(err) + RESET)
+
+                            except ModuleNotFoundError:
+                                print(RED + "Tkinter is not currently installed. Tkinter is required for this command to work" + RESET)
+                                print(YELLOW + "You can still manually install components by copying your .py file to this directory:" + BLUE + DATAPATH + "/components" + YELLOW + ". Please make sure the files are python .py files, or they will not be detected by WinLine" + RESET)
+
+                            except Exception as err:
+                                print(RED + "An error occurred: " + str(err) + RESET)
 
                         elif not (os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s.py"%whatToPurge)):
                             print(RED + "Component not found" + RESET)
