@@ -84,9 +84,3 @@ def network_connected():
         return True
     except:
         return False
-
-def speak(speech):
-    import pyttsx3
-    engine = pyttsx3.init()
-    engine.say(speech)
-    engine.runAndWait()
