@@ -1,5 +1,5 @@
-VERSION_ID = "3.2"
-PATCH_ID = 1
+VERSION_ID = "3.3"
+PATCH_ID = 0
 try:
     import os, sys, shutil, socket, subprocess, time, json
     from zipfile import ZipFile
@@ -61,15 +61,16 @@ except:
 ENABLEKEYBOARDINTURRUPT = "keyboardInturruptEnabled: true"
 CMDLINK = "cmdLink: enabled"
 ADVANCEDMODE = "advancedMode: enabled"
-SYSRUN_FAILED_COMMANDS = "sysrun_failed_commands: enabled"
+SYSRUN_FAILED_COMMANDS = "sysrun_failed_commands: true"
 ALLOW_COMPONENTS = "allow_components: true"
 EMULATE_LINUX = "emulate_linux: true"
 SHOW_NAME = "display_username_win: true"
+RESET_ON_ERROR = "prefer_reset_on_error: true"
 
-if os.name == "nt" and os.path.isfile(sys.path[0] + "/config"):
+if os.name == "nt" and os.path.isfile(DATAPATH + "/config"):
     if not (EMULATE_LINUX in config):NON_WIN = False;osext=""
     else:NON_WIN = True;osext=" (Linux Emulation)"
-elif not os.path.isfile(sys.path[0] + "/config"):
+elif not os.path.isfile(DATAPATH + "/config"):
     NON_WIN = False;osext=""
 
 print("\a")
@@ -90,7 +91,7 @@ if not NON_WIN:
 else:
     location = "/"
     last_location = ""
-    locprefix = SPECIALDRIVE + os.getlogin() + "@" + socket.gethostname() + RESET + " "
+    locprefix = MAGENTA + os.getlogin() + BLUE + "@" + SPECIALDRIVE + socket.gethostname() + RESET + " "
 
 if not NON_WIN:
     try:
@@ -151,10 +152,11 @@ if not NON_WIN:
             file.write("keyboardInturruptEnabled: true")
             file.write("\ncmdLink: disabled")
             file.write("\nadvancedMode: disabled")
-            file.write("\nsysrun_failed_commands: disabled")
+            file.write("\nsysrun_failed_commands: false")
             file.write("\nallow_components: true")
             file.write("\nemulate_linux: false")
             file.write("\ndisplay_username_win: true")
+            file.write("\nprefer_reset_on_error: false")
             file.close()
 
         except:
@@ -212,12 +214,28 @@ if not NON_WIN:
         except:
             NotImplemented
 
+    if not os.path.isdir(DATAPATH + "/owner_name"):
+        uname = input(BLUE + "\nWhat would you like to be called? > ")
+        try:
+            file = open(DATAPATH + "/owner_name", "x")
+            file.write(uname)
+            file.close()
+        except:
+            file = open(DATAPATH + "/owner_name", "w")
+            file.write(uname)
+            file.close()
+
 else:
     config = "allow_components: true\nkeyboardInturruptEnabled: true\nadvancedMode: enabled\nsysrun_failed_commands: enabled\n"
 
 if not (NON_WIN) and (SHOW_NAME in config):
     try:
-        if os.path.isfile(DATAPATH + "/owner_name"):locprefix = MAGENTA + open(DATAPATH+"/owner_name", "r").read() + BLUE + "~ " + RESET;print(YELLOW + "Welcome back, " + open(DATAPATH+"/owner_name", "r").read() + "!" + RESET)
+        if os.path.isfile(DATAPATH + "/owner_name"):
+            locprefix = MAGENTA + open(DATAPATH+"/owner_name", "r").read() + BLUE + "~ " + RESET
+            print(YELLOW + "Welcome back, " + open(DATAPATH+"/owner_name", "r").read() + "!" + RESET)
+        else:
+            locprefix = RED + "Local User" + BLUE + "~ " + RESET
+            print(RED + "Welcome, Local User!" + RESET)
     except:
         NotImplemented
 
@@ -248,8 +266,8 @@ def main():
 
 
             if (command.lower() == "help"):
-                print(BLUE + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'clock', 'list-drives', 'share-screen', stress, 'stress-2', 'monitor', 'components', 'change-name', 'user', 'battery-report'")
-                print("help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nclock: start the clock service, use ctrl+c to resume normal operation.\nlist-drives: lists all drives currently connected to the device\nshare-screen: launch the screenshare utility (requires ScreenCast to be installed)\nstress: run a CPU stress test, usually capable of redlining all CPU cores on reasonable systems\nstress-2: run a RAM stress test, usually capable of redlining RAM and maxing swap\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\n" + RESET)
+                print(BLUE + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'clock', 'list-drives', stress, 'stress-2', 'monitor', 'components', 'change-name', 'user', 'battery-report', 'mount_folder'")
+                print("help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nclock: start the clock service, use ctrl+c to resume normal operation.\nlist-drives: lists all drives currently connected to the device\nstress: run a CPU stress test, usually capable of redlining all CPU cores on reasonable systems\nstress-2: run a RAM stress test, usually capable of redlining RAM and maxing swap\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\nmount_folder [network drive] [local drive] [folder]: mount [folder] from [local drive] as a network drive with letter [network drive]\nunmount_folder [network drive]: unmount a network drive\n" + RESET)
                 # """camx [flags]: launch CamX: Rebirth if installed. use '--new' to launch in a new terminal and '--dev' to launch from a developer installation\n"""
                 
                 print(SPECIALDRIVE + "cmd: directly interface with Windows' command line. Exit cmd with ctrl+c or typing 'exit' to return to WinLine\npowershell: switch the current WinLine instance to a Powershell terminal. Use 'exit' to return to WinLine" + RESET)
@@ -384,7 +402,6 @@ def main():
 
 
             elif (command.split(maxsplit=1)[0] == "term" or command.lower() == "term"):
-
                 if (("-r" in command) or ("restart" in command)):
                     os.system('cls')
                     os.system('title ' + __file__)
@@ -482,31 +499,6 @@ def main():
                 print("")
 
             
-            elif (command.split(maxsplit=1)[0] == "chown"):
-                # try:
-                #     pathToFile = "%s" % command.split(maxsplit=2)[1]
-                #     user = command.split(maxsplit=2)[2]
-                #     if (os.path.isfile(location + "/" + pathToFile)):
-                #         pathToFile = location + "/" + pathToFile
-
-                #     elif (os.path.isfile(pathToFile)):
-                #         pathToFile = pathToFile
-
-                #     shutil.chown(pathToFile, user)
-                #     shutil.chown
-
-
-                # except Exception as err:
-                #     if ("list index out of range" in str(err)):
-                #         print(RED + "Error: path or user to change owner to not specified. Format: chown [path] [user]" + RESET)
-
-                #     else:
-                #         print(RED + "An error is preventing the operation from completing: " + str(err) + RESET)
-                file = open(DATAPATH + "/lockedCommand.txt").read()
-                print(file % (RED + command.split(maxsplit=1)[0] + RESET))
-                print("")
-
-            
             elif (command.split(maxsplit=1)[0] == "cat"):
                 try:
                     pathToFile = "%s" % command.split(maxsplit=1)[1]
@@ -522,8 +514,6 @@ def main():
                     print(file)
 
                 except Exception as err:
-
-                    # print(str(err))
                     if ("[WinError 2] The system cannot find the file specified" in str(err)):
                         print(RED + "File does not exist" + RESET)
 
@@ -735,19 +725,6 @@ def main():
                 except:
                     print("\n")
 
-
-            elif (command == "lie"):
-                sys.stdout.write(u"\x1b[1A" + u"\x1b[2K" + "\r" + locprefix + location + "> tellTheTruth\n")
-                print("This cake is deliciously moist!\n")
-
-
-            elif (command == "cake"):
-                print("Finish all 19 tests first, then you can have this delicious cake.\n")
-
-
-            elif (command == "GLaDOS"):
-                print(BLUE + "Let's not talk about \u001b[3mher\u001b[23m\n" + RESET)
-
             elif (command == "tellTheTruth"):
                 sys.stdout.write(u"\x1b[1A" + u"\x1b[2K" + "\r")
 
@@ -783,36 +760,6 @@ def main():
                 else:
                     print(RED + "This feature is only available on Windows")
 
-            elif command == "I don't want your damn lemons, what am I supposed to do with these?!" or command == "suicide":
-                print(YELLOW + "This command has been removed to protect your computer\n" + RESET)
-                # if not NON_WIN:
-                #     from ctypes import windll
-                #     from ctypes import c_int
-                #     from ctypes import c_uint
-                #     from ctypes import c_ulong
-                #     from ctypes import POINTER
-                #     from ctypes import byref
-
-                #     nullptr = POINTER(c_int)()
-
-                #     windll.ntdll.RtlAdjustPrivilege(
-                #         c_uint(19), 
-                #         c_uint(1), 
-                #         c_uint(0), 
-                #         byref(c_int())
-                #     )
-
-                #     windll.ntdll.NtRaiseHardError(
-                #         c_ulong(0xC000007B), 
-                #         c_ulong(0), 
-                #         nullptr, 
-                #         nullptr, 
-                #         c_uint(6), 
-                #         byref(c_uint())
-                #     )
-                # else:
-                #     print(RED + "Unknown command" + RESET)
-
             elif command == "monitor":
                 try:
                     sys.stdout.write(u"\x1b[?25l")
@@ -836,24 +783,6 @@ def main():
                         swapUsage = str(utilities.colorRamUsage(psutil.swap_memory().used/(1024.0 ** 3),psutil.swap_memory().total/(1024.0 ** 3),RED, YELLOW, SPECIALDRIVE, RESET))
                         battery = psutil.sensors_battery()
                         batteryCharge = str(utilities.colorBatteryPercentage(int(battery.percent), battery, RED, YELLOW, SPECIALDRIVE, BLUE, CRITICAL_BATTERY, RESET))
-
-                        # print(cached_battery)
-
-                        # if int(battery.percent) <= 30 and int(battery.percent) > 20 and cached_battery != "low":
-                        #     cached_battery = "low"
-                        #     utilities.speak("Battery low")
-                        # elif int(battery.percent) <= 10 and cached_battery != "critical":
-                        #     cached_battery = "critical"
-                        #     utilities.speak("Battery critical")
-                        # elif int(battery.percent) > 30 and cached_battery != "okay":
-                        #     cached_battery = "okay"
-                        #     utilities.speak("Battery okay")
-                        # elif (battery.power_plugged) and cached_battery != "charging":
-                        #     cached_battery = "charging"
-                        #     utilities.speak("A C power connected")
-                        # elif (cached_battery == "charging" and not battery.power_plugged):
-                        #     cached_battery = "okay"
-                        #     utilities.speak("A C power disconnected")
 
                         try:
                             net_stat = str(psutil.net_if_stats().get("Wi-Fi").isup)
@@ -901,18 +830,6 @@ def main():
                 try:
                     print(os.path.getsize(command.split()[1]))
                 except Exception as err:print(str(err))
-
-            # elif (command == "components" or command == "addons" or command == "add-ons" or command == "addins" or command == "add-ins" or command == "extensions"):
-
-            #     print(YELLOW + "The following components are currently installed:" + RESET)
-            #     for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/"):
-            #         # print(loaded_components)
-            #         if (component.split(".", 1)[0] in loaded_components):
-            #             print(BLUE + component.split(".", 1)[0] + RESET)
-            #         else:
-            #             print(DRIVES + component.split(".", 1)[0] + " (unloaded)" + RESET)
-
-            #     print("") 
 
             elif command == "battery-report":
                 if NON_WIN:
@@ -1160,7 +1077,7 @@ def main():
                                     if not (component.split(".", 1)[0] in ignore_load_status) and os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component):
                                         if(component.split(".", 1)[0] in loaded_components and component.split(".", 1)[0] in enabled_components):load_string=SPECIALDRIVE+"(loaded)";colorToUse=BLUE
                                         elif(component.split(".", 1)[0] in enabled_components):load_string="(unloaded)";colorToUse=DRIVES
-                                        elif not (ALLOW_COMPONENTS in config):load_string=(RED + "(disallowed)" + RESET);colorToUse=RED
+                                        elif not (ALLOW_COMPONENTS in config):load_string=(RED + "(blacklisted)" + RESET);colorToUse=RED
                                         elif not (os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s.py"%component)):load_string=RED+"(unsupported format)";colorToUse=DRIVES
                                         else:load_string=RED+"(unavailable - requires restart)";colorToUse=DRIVES
 
@@ -1201,7 +1118,7 @@ def main():
                 try:
                     print(MAGENTA + open(DATAPATH+"/owner_name", "r").read() + YELLOW + " (%s)"%os.getlogin() + RESET + " on " + BLUE + socket.gethostname() + "\n")
                 except:
-                    print(MAGENTA + "Local user" + YELLOW + " (%s)"%os.getlogin() + RESET + " on " + BLUE + socket.gethostname() + "\n")
+                    print(RED + "Local user" + YELLOW + " (%s)"%os.getlogin() + RESET + " on " + BLUE + socket.gethostname() + "\n" + RESET)
 
             elif ("change-name" in command):
                 if not (NON_WIN):
@@ -1230,6 +1147,36 @@ def main():
             
             elif command == "induce":os.induce()
 
+            elif command.split(maxsplit=3)[0] == "mount_folder":
+                try:
+                    drive = command.split(maxsplit=3)[1]
+                    sysd = command.split(maxsplit=3)[2]
+                    folder = command.split(maxsplit=3)[3]
+                    valid = True
+
+                    command_string = "net use %s: \"\\\\localhost\\%s$\\%s\" /persistent:yes"%(drive,sysd,folder)
+                    # print(command_string)
+
+                except:
+                    print(RED + "Invalid parameter values" + RESET)
+                    print(YELLOW + "Example usage: mount_folder x c \\example\\myfolder" + RESET)
+                    valid = False
+
+                if valid:
+                    subprocess.call(command_string)
+
+            elif command.split(maxsplit=3)[0] == "unmount_folder" or command.split(maxsplit=3)[0] == "umount_folder":
+                try:
+                    drive = command.split(maxsplit=3)[1]
+
+                    command_string = "net use %s: /D"%drive
+
+                    subprocess.call(command_string)
+
+                except:
+                    print(RED + "Invalid parameter values" + RESET)
+                    print(YELLOW + "Example usage: unmount_folder x" + RESET)
+
             else:
                 if not (NON_WIN):
                     addin_commands = []
@@ -1256,7 +1203,7 @@ def main():
                             else:print(RED + "That component was unloaded by the user or a script. To load it, run the '" + BLUE + "components --load %s"%command + RED + "' command" + RESET)
                             print(DRIVES + "Unloaded addon: " + command + RESET + "\n")
                         else:
-                            print(RED + "Components have been disabled from the config file" + RESET)
+                            print(RED + "Components have been disabled from the config file\n" + RESET)
 
                 elif not (SYSRUN_FAILED_COMMANDS in config):
                     sys.stdout.write(u"\x1b[1A" + u"\x1b[2K" + "\r" + locprefix + location + "> " + "\u001b[1;41m" + command + RESET + "\n")
@@ -1292,31 +1239,34 @@ while True:
     try:
         main()
     except Exception as err:
-        print(YELLOW + "\n##-----------------------##"+RESET)
-        print(YELLOW + "WinLine Exception Handler\n" + RESET)
-        time.sleep(0.1)
-        print(RED + "WinLine has experienced an error" + RESET)
-        time.sleep(0.1)
-        print(YELLOW + "Error message: " + str(err) + "\n" + RESET)
-        print(YELLOW + "Resuming normal operation" + RESET)
-        print(YELLOW + "##-----------------------##\n"+RESET)
-        # time.sleep(2)
-        # print(YELLOW + "\n##-----------------------##\n"+RESET)
-        # time.sleep(0.1)
-        # os.system("title WinLine Crash Handler")
-        # time.sleep(0.1)
-        # print(RED + "WinLine has experienced a fatal error" + RESET)
-        # time.sleep(0.1)
-        # print(YELLOW + "Error message: " + str(err) + "\n" + RESET)
-        # time.sleep(0.1)
-        # reboot = input(BLUE + "Do you want to restart WinLine? [Y/N] > ").capitalize()
+        if not (RESET_ON_ERROR in config):
+            print(YELLOW + "\n##-----------------------##"+RESET)
+            print(YELLOW + "WinLine Exception Handler\n" + RESET)
+            time.sleep(0.1)
+            print(RED + "WinLine has experienced an error" + RESET)
+            time.sleep(0.1)
+            print(YELLOW + "Error message: " + str(err) + "\n" + RESET)
+            print(YELLOW + "Resuming normal operation" + RESET)
+            print(YELLOW + "##-----------------------##\n"+RESET)
+        
+        else:
+            time.sleep(2)
+            print(YELLOW + "\n##-----------------------##\n"+RESET)
+            time.sleep(0.1)
+            os.system("title WinLine Crash Handler")
+            time.sleep(0.1)
+            print(RED + "WinLine has experienced a fatal error" + RESET)
+            time.sleep(0.1)
+            print(YELLOW + "Error message: " + str(err) + "\n" + RESET)
+            time.sleep(0.1)
+            reboot = input(BLUE + "Do you want to restart WinLine? [Y/N] > ").capitalize()
 
-        # if reboot == ("Y"):
-        #     os.system("cls")
-        #     time.sleep(2)
-        #     subprocess.call("python " + __file__)
-        #     os.abort()
-        # else:
-        #     print(YELLOW + "Exiting crash handler..." + RESET)
-        #     time.sleep(2)
-        #     os.abort()
+            if reboot == ("Y"):
+                os.system("cls")
+                time.sleep(2)
+                subprocess.call("python " + __file__)
+                os.abort()
+            else:
+                print(YELLOW + "Exiting crash handler..." + RESET)
+                time.sleep(2)
+                os.abort()
