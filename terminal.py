@@ -1,4 +1,4 @@
-VERSION_ID = "3.4.1"
+VERSION_ID = "3.4"
 PATCH_ID = 0
 
 KEY_DEVMODE = "DEVELOPER.UNSTABLE.%s"%VERSION_ID
@@ -147,116 +147,119 @@ def get_drives():
     else:
         print(RED + "This feature is only available on Windows systems" + RESET)
 
-if not NON_WIN:
-    if not (os.path.isfile(DATAPATH + "/config")) or (open(DATAPATH + "/config", "r").read() == ""):
-        sleep(0.75)
-        print(DULLYELLOW + "Welcome to WinLine!")
-        sleep(2.5)
-        print(BLUE + "Please wait for automatic setup to finish..." + RESET)
-        sleep(1.5)
+def doConfig():
+    if not NON_WIN:
+        if not (os.path.isfile(DATAPATH + "/config")) or (open(DATAPATH + "/config", "r").read() == ""):
+            sleep(0.75)
+            print(DULLYELLOW + "Welcome to WinLine!")
+            sleep(2.5)
+            print(BLUE + "Please wait for automatic setup to finish..." + RESET)
+            sleep(1.5)
 
-        try:
-            os.mkdir(DATAPATH)
+            try:
+                os.mkdir(DATAPATH)
 
-        except Exception as err:
-            NotImplemented
+            except Exception as err:
+                NotImplemented
 
-        try:
-            os.mkdir(DATAPATH + "/man")
+            try:
+                os.mkdir(DATAPATH + "/man")
+            
+            except Exception as err:
+                NotImplemented
+
+
+            try: 
+                open(DATAPATH + "/setDone", "x").close()
+                open(DATAPATH + "/loadedVersion", "x").close()
+            except Exception as err:
+                NotImplemented
+            
+            try:
+                open(DATAPATH + "/config", "x")
+                file = open(DATAPATH + "/config", "a")
+                file.write("keyboardInturruptEnabled: true")
+                file.write("\ncmdLink: disabled")
+                file.write("\nadvancedMode: disabled")
+                file.write("\nsysrun_failed_commands: false")
+                file.write("\nallow_components: true")
+                file.write("\nemulate_linux: false")
+                file.write("\ndisplay_username_win: true")
+                file.write("\nprefer_reset_on_error: false")
+                file.write("\nenable_malware_protection: true")
+                file.write("\nthreaded_mw_protection: true")
+                file.close()
+
+            except:
+                NotImplemented
+
+            uname = input(BLUE + "\nWhat would you like to be called? > ")
+
+            try:
+                file = open(DATAPATH + "/owner_name", "x")
+                file.write(uname)
+                file.close()
+            except:
+                file = open(DATAPATH + "/owner_name", "w")
+                file.write(uname)
+                file.close()
+
+            try:
+                file = open(DATAPATH + "/development_components.txt", "x")
+                file.close()
+            except:NotImplemented
+
+            # try:
+            #     file = open(DATAPATH + "/loadedVersion", "x")
+            #     file.write(Appversion)
+            #     file.close()
+            # except:
+            #     NotImplemented
+            
+            print(BLUE + "Setup complete!\n" + RESET)
+
+            sleep(1)
+            print(DULLYELLOW + "To get started, use " + BLUE + "help " + DULLYELLOW + "to list supported commands.\n\n" + RESET)
+
+            config = open(DATAPATH + "/config", "r").read()
+
+        if not os.path.isdir(DATAPATH + "/components/staging"):
+            try:
+                os.mkdir(DATAPATH + "/components/staging")
+            except:
+                NotImplemented
+        if not os.path.isdir(DATAPATH + "/components/disabled"):
+            try:
+                os.mkdir(DATAPATH + "/components/disabled")
+            except:
+                NotImplemented
+        if not os.path.isdir(DATAPATH + "/components/unloaded"):
+            try:
+                os.mkdir(DATAPATH + "/components/unloaded")
+            except:
+                NotImplemented
         
-        except Exception as err:
-            NotImplemented
+        if not os.path.isdir(DATAPATH + "/components/packs"):
+            try:
+                os.mkdir(DATAPATH + "/components/unloaded")
+            except:
+                NotImplemented
 
+        if not os.path.isfile(DATAPATH + "/owner_name"):
+            uname = input(BLUE + "\nWhat would you like to be called? > ")
+            try:
+                file = open(DATAPATH + "/owner_name", "x")
+                file.write(uname)
+                file.close()
+            except:
+                file = open(DATAPATH + "/owner_name", "w")
+                file.write(uname)
+                file.close()
 
-        try: 
-            open(DATAPATH + "/setDone", "x").close()
-            open(DATAPATH + "/loadedVersion", "x").close()
-        except Exception as err:
-            NotImplemented
-        
-        try:
-            open(DATAPATH + "/config", "x")
-            file = open(DATAPATH + "/config", "a")
-            file.write("keyboardInturruptEnabled: true")
-            file.write("\ncmdLink: disabled")
-            file.write("\nadvancedMode: disabled")
-            file.write("\nsysrun_failed_commands: false")
-            file.write("\nallow_components: true")
-            file.write("\nemulate_linux: false")
-            file.write("\ndisplay_username_win: true")
-            file.write("\nprefer_reset_on_error: false")
-            file.write("\nenable_malware_protection: true")
-            file.write("\nthreaded_mw_protection: true")
-            file.close()
+    else:
+        config = "allow_components: true\nkeyboardInturruptEnabled: true\nadvancedMode: enabled\nsysrun_failed_commands: enabled\n"
 
-        except:
-            NotImplemented
-
-        uname = input(BLUE + "\nWhat would you like to be called? > ")
-
-        try:
-            file = open(DATAPATH + "/owner_name", "x")
-            file.write(uname)
-            file.close()
-        except:
-            file = open(DATAPATH + "/owner_name", "w")
-            file.write(uname)
-            file.close()
-
-        try:
-            file = open(DATAPATH + "/development_components.txt", "x")
-            file.close()
-        except:NotImplemented
-
-        # try:
-        #     file = open(DATAPATH + "/loadedVersion", "x")
-        #     file.write(Appversion)
-        #     file.close()
-        # except:
-        #     NotImplemented
-        
-        print(BLUE + "Setup complete!\n" + RESET)
-
-        sleep(1)
-        print(DULLYELLOW + "To get started, use " + BLUE + "help " + DULLYELLOW + "to list supported commands.\n\n" + RESET)
-
-        config = open(DATAPATH + "/config", "r").read()
-
-    if not os.path.isdir(DATAPATH + "/components/staging"):
-        try:
-            os.mkdir(DATAPATH + "/components/staging")
-        except:
-            NotImplemented
-    if not os.path.isdir(DATAPATH + "/components/disabled"):
-        try:
-            os.mkdir(DATAPATH + "/components/disabled")
-        except:
-            NotImplemented
-    if not os.path.isdir(DATAPATH + "/components/unloaded"):
-        try:
-            os.mkdir(DATAPATH + "/components/unloaded")
-        except:
-            NotImplemented
-    
-    if not os.path.isdir(DATAPATH + "/components/packs"):
-        try:
-            os.mkdir(DATAPATH + "/components/unloaded")
-        except:
-            NotImplemented
-
-    if not os.path.isfile(DATAPATH + "/owner_name"):
-        uname = input(BLUE + "\nWhat would you like to be called? > ")
-        try:
-            file = open(DATAPATH + "/owner_name", "x")
-            file.write(uname)
-            file.close()
-        except:
-            file = open(DATAPATH + "/owner_name", "w")
-            file.write(uname)
-            file.close()
-
-else:
-    config = "allow_components: true\nkeyboardInturruptEnabled: true\nadvancedMode: enabled\nsysrun_failed_commands: enabled\n"
+doConfig()
 
 if not (NON_WIN) and (SHOW_NAME in config):
     try:
@@ -334,8 +337,8 @@ def main():
 
 
             if (command.lower() == "help"):
-                print(BLUE + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'clock', 'list-drives', stress, 'stress-2', 'monitor', 'components', 'change-name', 'user', 'battery-report', 'mount_folder'")
-                print("help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nclock: start the clock service, use ctrl+c to resume normal operation.\nlist-drives: lists all drives currently connected to the device\nstress: run a CPU stress test, usually capable of redlining all CPU cores on reasonable systems\nstress-2: run a RAM stress test, usually capable of redlining RAM and maxing swap\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\nmount_folder [network drive] [local drive] [folder]: mount [folder] from [local drive] as a network drive with letter [network drive]\nunmount_folder [network drive]: unmount a network drive\n" + RESET)
+                print(BLUE + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'clock', 'list-drives', stress, 'stress-2', 'monitor', 'components', 'change-name', 'user', 'battery-report', 'mount_folder', 'reconfigure'")
+                print("help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nclock: start the clock service, use ctrl+c to resume normal operation.\nlist-drives: lists all drives currently connected to the device\nstress: run a CPU stress test, usually capable of redlining all CPU cores on reasonable systems\nstress-2: run a RAM stress test, usually capable of redlining RAM and maxing swap\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\nmount_folder [network drive] [local drive] [folder]: mount [folder] from [local drive] as a network drive with letter [network drive]\nunmount_folder [network drive]: unmount a network drive\nreconfigure: update the config file to work with the installed version of WinLine\n" + RESET)
                 # """camx [flags]: launch CamX: Rebirth if installed. use '--new' to launch in a new terminal and '--dev' to launch from a developer installation\n"""
                 
                 print(SPECIALDRIVE + "cmd: directly interface with Windows' command line. Exit cmd with ctrl+c or typing 'exit' to return to WinLine\npowershell: switch the current WinLine instance to a Powershell terminal. Use 'exit' to return to WinLine" + RESET)
@@ -1296,6 +1299,15 @@ def main():
 
             elif command == "path":
                 print(YELLOW + "%s\n"%sys.path[0] + RESET)
+
+            elif command == "reconfigure":
+                print(RED + "Warning: Reconfiguring WinLine will reset all changes to the configuration!" + RESET)
+                allow = input(BLUE + "Do you want to continue? [Y/N] > ").capitalize()
+
+                if allow == "Y":
+                    print(YELLOW + "Updating configuration...")
+                    os.remove(DATAPATH + "/config")
+                    doConfig()
 
             else:
                 if not (NON_WIN):
