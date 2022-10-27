@@ -1,5 +1,12 @@
-VERSION_ID = "3.3"
+VERSION_ID = "3.4"
 PATCH_ID = 0
+
+KEY_DEVMODE = "DEVELOPER.UNSTABLE.%s"%VERSION_ID
+KEY_BETA = "GIT_BETA"
+KEY_DISTMODE = "GIT_STABLE"
+
+REMOTE_SERVER = "https://psychon-dev-studios.github.io/nwl_stirehost"
+
 try:
     import os, sys, shutil, socket, subprocess, time, json
     from zipfile import ZipFile
@@ -25,9 +32,25 @@ else:NON_WIN = True;osext=" (Limited Non-Windows)"
 
 patchDisplay = "[Patch %s]"%PATCH_ID if PATCH_ID > 0 else  ""
 
-Appversion = VERSION_ID + " " + patchDisplay
+try:
+    if (sys.path[0] == "c:\\Users\\%s\\Downloads\\VisualStudioCode\\Python\\winLine"%open("C:/ProgramData/PsychonDevStudios/userKey.txt", "r").read() or sys.path[0] == "W:\\"):
+        ISDEV = True
+    else:
+        ISDEV = False
+except:ISDEV = False
+
+try:
+    if not (ISDEV):
+        Appversion = VERSION_ID + " " + patchDisplay
+    else:
+        Appversion = KEY_DEVMODE + " " + patchDisplay
+except:
+    Appversion = VERSION_ID + " " + patchDisplay
 loaded_components = []
 enabled_components = []
+found_dangerous = []
+
+DANGEROUS_ADDONS_BUILTIN = "\nfake_dangerous"
 
 os.system('title WinLine %s%s'%(Appversion,osext))
 
@@ -66,6 +89,8 @@ ALLOW_COMPONENTS = "allow_components: true"
 EMULATE_LINUX = "emulate_linux: true"
 SHOW_NAME = "display_username_win: true"
 RESET_ON_ERROR = "prefer_reset_on_error: true"
+ENABLE_AV_CHECK = "enable_malware_protection: true"
+THREADED_AV_CHECK = "threaded_mw_protection: true"
 
 if os.name == "nt" and os.path.isfile(DATAPATH + "/config"):
     if not (EMULATE_LINUX in config):NON_WIN = False;osext=""
@@ -76,7 +101,10 @@ elif not os.path.isfile(DATAPATH + "/config"):
 print("\a")
 
 os.system('cls')
-print(DULLYELLOW + "WinLine " + Appversion + osext + RESET)
+if not ISDEV:
+    print(DULLYELLOW + "WinLine " + Appversion + osext + RESET)
+else:
+    print(DEV_COMPONENT + "WinLine " + Appversion + osext + RESET)
 
 if NON_WIN:
     print(RED + "\nThis instance of WinLine is running on a non-Windows operating system. Some features are unavailable, and some commands may not work correctly." + RESET)
@@ -157,6 +185,8 @@ if not NON_WIN:
             file.write("\nemulate_linux: false")
             file.write("\ndisplay_username_win: true")
             file.write("\nprefer_reset_on_error: false")
+            file.write("\nenable_malware_protection: true")
+            file.write("\nthreaded_mw_protection: true")
             file.close()
 
         except:
@@ -214,7 +244,7 @@ if not NON_WIN:
         except:
             NotImplemented
 
-    if not os.path.isdir(DATAPATH + "/owner_name"):
+    if not os.path.isfile(DATAPATH + "/owner_name"):
         uname = input(BLUE + "\nWhat would you like to be called? > ")
         try:
             file = open(DATAPATH + "/owner_name", "x")
@@ -232,7 +262,10 @@ if not (NON_WIN) and (SHOW_NAME in config):
     try:
         if os.path.isfile(DATAPATH + "/owner_name"):
             locprefix = MAGENTA + open(DATAPATH+"/owner_name", "r").read() + BLUE + "~ " + RESET
-            print(YELLOW + "Welcome back, " + open(DATAPATH+"/owner_name", "r").read() + "!" + RESET)
+            if not ISDEV:
+                print(YELLOW + "Welcome back, " + open(DATAPATH+"/owner_name", "r").read() + "!" + RESET)
+            else:
+                print(DEV_COMPONENT + "Welcome back, " + open(DATAPATH+"/owner_name", "r").read() + "! You're in developer mode." + RESET)
         else:
             locprefix = RED + "Local User" + BLUE + "~ " + RESET
             print(RED + "Welcome, Local User!" + RESET)
@@ -253,6 +286,41 @@ if (ALLOW_COMPONENTS in config):
                 print(DEV_COMPONENT + "Developer components are installed" + RESET)
         except:NotImplemented
 else:loaded_components=[];print(RED + "Components have been disabled from the config file" + RESET);os.system("title WinLine %s (components disabled)"%Appversion)
+
+
+def checkForDangerousComponents():
+    global found_dangerous
+    dangerousCount = 0
+    try:
+        unsafe_components = str(urlRequest.urlopen(REMOTE_SERVER  + "/components/dangerous").read(), "'UTF-8'")
+        verified_components = str(urlRequest.urlopen(REMOTE_SERVER  + "/components/official").read(), "'UTF-8'")
+        unsafe_components = unsafe_components + "\n" + DANGEROUS_ADDONS_BUILTIN
+    except Exception as err:
+        unsafe_components = DANGEROUS_ADDONS_BUILTIN
+        verified_components = ""
+        if not THREADED_AV_CHECK in config:
+            print(RED + "WARNING: Unable to reach A/V server. Built-in A/V may not be fully effective!" + RESET)
+
+    for component in os.listdir(DATAPATH + "/components/disabled"):
+        if component.split(".")[0] in unsafe_components:
+            dangerousCount += 1
+            try:
+                found_dangerous.append(component)
+            except Exception as err:
+                NotImplemented
+
+    for component in enabled_components:
+        if component in unsafe_components:
+            dangerousCount += 1
+            try:
+                shutil.move(DATAPATH + "/components/%s.py"%component, DATAPATH + "/components/disabled/")
+                found_dangerous.append(component)
+            except Exception as err:
+                NotImplemented
+
+    if dangerousCount != 0:
+        if not THREADED_AV_CHECK in config:
+            print(RED + "%s dangerous components were found and have been disabled"%dangerousCount + RESET)
 
 def main():
     global location, last_location, cxrDevLocation, loaded_components, enabled_components, locprefix
@@ -934,11 +1002,22 @@ def main():
                         if (ALLOW_COMPONENTS in config):
                             whatToEnable = command.split(maxsplit=2)[2]
                             if not whatToEnable in open(DATAPATH + "/development_components.txt").read():
-                                try:
-                                    shutil.move(DATAPATH + "/components/disabled/%s.py"%whatToEnable, DATAPATH + "/components/%s.py"%whatToEnable)
-                                    print(DRIVES + "Component enabled" + RESET)
-                                    enabled_components.append(whatToEnable)
-                                except:print(RED + "The component could not be enabled" + RESET)
+                                if not (whatToEnable in found_dangerous):
+                                    try:
+                                        shutil.move(DATAPATH + "/components/disabled/%s.py"%whatToEnable, DATAPATH + "/components/unloaded/%s.py"%whatToEnable)
+                                        print(DRIVES + "Component enabled" + RESET)
+                                        enabled_components.append(whatToEnable)
+                                    except Exception as err:print(RED + "The component could not be enabled %s"%str(err) + RESET)
+                                else:
+                                    print(RED + "WARNING: this component has been marked as dangerous by the development team. This usually means this component acts like malware or a virus. You should NOT enable this component." + RESET)
+                                    contenable = input(BLUE + "Are you sure you want to continue? [Y/N] > " + RESET).capitalize()
+
+                                    if contenable == "Y":
+                                        try:
+                                            shutil.move(DATAPATH + "/components/disabled/%s.py"%whatToEnable, DATAPATH + "/components/unloaded/%s.py"%whatToEnable)
+                                            print(DRIVES + "Component enabled" + RESET)
+                                            enabled_components.append(whatToEnable)
+                                        except Exception as err:print(RED + "The component could not be enabled %s"%str(err) + RESET)
                             else: print(DEV_COMPONENT + "Developer components are always enabled" + RESET)
                         else:
                             print(RED + "Components have been disallowed from the configuration file" + RESET)
@@ -1060,9 +1139,29 @@ def main():
                                 print(RED + "An error occurred: " + str(err) + RESET)
 
                     elif ("--debug" in flags):
+                        pcomp = os.listdir(DATAPATH + "/components/disabled")
+                        dcomp = os.listdir(DATAPATH + "/components")
+                        disabled = []
+                        present = []
+                        dev = []
+                        ignore_load_status = open(DATAPATH + "/development_components.txt").read()
+                        for addon in pcomp:
+                            if os.path.isfile(DATAPATH + "/components/disabled/%s"%addon) and ".py" in addon:
+                                disabled.append(addon.split(".")[0])
+                        for addon in dcomp:
+                            if os.path.isfile(DATAPATH + "/components/%s"%addon) and ".py" in addon:
+                                present.append(addon.split(".")[0])
+
+                        for addon in present:
+                            if (addon.split(".")[0] in ignore_load_status):
+                                dev.append(addon.split(".")[0])
+                        
                         print(BLUE + "Component debug information")
+                        print(YELLOW + "Developer components: " + DEV_COMPONENT + str(dev))
                         print(YELLOW + "Enabled components: " + SPECIALDRIVE + str(enabled_components))
-                        print(YELLOW + "Loaded components: " + SPECIALDRIVE + str(loaded_components) + RESET)
+                        print(YELLOW + "Loaded components: " + SPECIALDRIVE + str(loaded_components))
+                        print(YELLOW + "Detected components: " + YELLOW + str(present))
+                        print(YELLOW + "Disabled components: " + RED + str(disabled) + RESET)
 
                     else:
                         if not (NON_WIN):
@@ -1075,11 +1174,12 @@ def main():
                                     ignore_load_status = open(DATAPATH + "/development_components.txt").read()
 
                                     if not (component.split(".", 1)[0] in ignore_load_status) and os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component):
-                                        if(component.split(".", 1)[0] in loaded_components and component.split(".", 1)[0] in enabled_components):load_string=SPECIALDRIVE+"(loaded)";colorToUse=BLUE
+                                        if component.split(".", 1)[0] in found_dangerous:load_string="(DANGEROUS)";colorToUse=RED
+                                        elif(component.split(".", 1)[0] in loaded_components and component.split(".", 1)[0] in enabled_components):load_string=SPECIALDRIVE+"(loaded)";colorToUse=BLUE
                                         elif(component.split(".", 1)[0] in enabled_components):load_string="(unloaded)";colorToUse=DRIVES
                                         elif not (ALLOW_COMPONENTS in config):load_string=(RED + "(blacklisted)" + RESET);colorToUse=RED
-                                        elif not (os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s.py"%component)):load_string=RED+"(unsupported format)";colorToUse=DRIVES
-                                        else:load_string=RED+"(unavailable - requires restart)";colorToUse=DRIVES
+                                        elif not (os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component)):load_string=RED+"(unsupported format)";colorToUse=DRIVES
+                                        else:load_string=RED+"(restart WinLine to enable)";colorToUse=DRIVES
 
                                         print(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
                                     elif os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component):
@@ -1087,7 +1187,8 @@ def main():
                                         dev_components.append(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
 
                             for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/unloaded"):
-                                load_string="(unloaded)";colorToUse=DRIVES
+                                if component in found_dangerous:load_string="(DANGEROUS)";colorToUse=RED
+                                else:load_string="(unloaded)";colorToUse=DRIVES
                                 print(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
 
                             if len(dev_components) != 0:
@@ -1098,7 +1199,9 @@ def main():
                             print("")
 
                             for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/disabled"):
-                                load_string=(RED + "(disabled)" + RESET);colorToUse=RED
+                                if component in found_dangerous:
+                                    load_string="(DANGEROUS)";colorToUse=RED
+                                else:load_string="(unloaded)";colorToUse=DRIVES
                                 print(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
                     
                     print("")
@@ -1177,6 +1280,23 @@ def main():
                     print(RED + "Invalid parameter values" + RESET)
                     print(YELLOW + "Example usage: unmount_folder x" + RESET)
 
+
+            elif command == "wldata":
+                os.startfile(DATAPATH)
+
+            elif command == "edition" or command == "key":
+                try:
+                    if sys.path[0] == "c:\\Users\\%s\\Downloads\\VisualStudioCode\\Python\\winLine"%open("C:/ProgramData/PsychonDevStudios/userKey.txt", "r").read():
+                        print(DEV_COMPONENT + KEY_DEVMODE + RESET)
+                    else:
+                        print(SPECIALDRIVE + KEY_DISTMODE + RESET)
+                except:
+                    print(SPECIALDRIVE + KEY_DISTMODE + RESET)
+                print("")
+
+            elif command == "path":
+                print(YELLOW + "%s\n"%sys.path[0] + RESET)
+
             else:
                 if not (NON_WIN):
                     addin_commands = []
@@ -1232,8 +1352,20 @@ def main():
                 print(RED + "Unhandled error: " + str(err) + RESET)
 
 
-if (ADVANCEDMODE in config):
+if (ADVANCEDMODE in config) and not ISDEV:
     print(SPECIALDRIVE + "Advanced mode is enabled\n" + RESET)
+elif ISDEV:
+    print(DEV_COMPONENT + "Developer mode is enabled\n" + RESET)
+
+if ENABLE_AV_CHECK in config:
+    if not THREADED_AV_CHECK in config:
+        checkForDangerousComponents()
+    else:
+        td(target=checkForDangerousComponents, name="A/V check thread").start()
+else:
+    print(DRIVES + "Warning: malware detection has been disabled from the config file. WinLine will not check for malicious components!" + RESET)
+
+print("")
 
 while True:
     try:
