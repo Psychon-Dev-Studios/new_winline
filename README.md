@@ -19,3 +19,12 @@ The terminal emulates a lxterm-like environment, sutable for users familiar with
 * Custom module support (Components)
   * Also enables custom scripts
 * More features and commands with every update
+
+## MINIMUM REQUIREMENTS:
+* Python 3.x
+* 100 KB free space
+* Windows 10 / Windows 11 / Linux
+
+## RECOMMENDED:
+* Python 3.8
+* 500 KB free space (to allow for components)
