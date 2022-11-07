@@ -24,11 +24,21 @@ try:
 
 except Exception as err:
     import time
-    print("Unable to start WinLine: " + str(err))
-    time.sleep(999)
-    
-if (os.name == "nt"):osext=""
-else:NON_WIN = True;osext=" (Limited Non-Windows)"
+    try:
+        import os, sys
+        import shutil, socket, subprocess, json
+        from zipfile import ZipFile
+    except:
+        NotImplemented
+    print("Warning: Some modules failed to load. Some features will not work correctly")
+    print("WinLine will continue startup momentarily")
+    # time.sleep(999)
+    time.sleep(4)
+
+try:
+    if (os.name == "nt"):osext=""
+    else:NON_WIN = True;osext=" (Limited Non-Windows)"
+except:osext=""
 
 patchDisplay = "[Patch %s]"%PATCH_ID if PATCH_ID > 0 else  ""
 
@@ -52,7 +62,8 @@ found_dangerous = []
 
 DANGEROUS_ADDONS_BUILTIN = "\nfake_dangerous"
 
-os.system('title WinLine %s%s'%(Appversion,osext))
+try:os.system('title WinLine %s%s'%(Appversion,osext))
+except:NotImplemented
 
 BLUE = "\u001b[38;5;87m"
 DRIVES = "\u001b[1;38;5;202m"
@@ -66,10 +77,14 @@ RESET = "\u001b[0m"
 CRITICAL_BATTERY = "\u001b[38;5;160m"
 DEV_COMPONENT = "\u001b[38;5;129m"
 
-if os.name == "nt":
-    DRIVELETTER = str(os.environ['WINDIR'].split(":\\")[0])
-    DATAPATH = DRIVELETTER + ":/ProgramData/winLine"
-else:
+try:
+    if os.name == "nt":
+        DRIVELETTER = str(os.environ['WINDIR'].split(":\\")[0])
+        DATAPATH = DRIVELETTER + ":/ProgramData/winLine"
+    else:
+        DRIVELETTER = ""
+        DATAPATH = ""
+except:
     DRIVELETTER = ""
     DATAPATH = ""
 
@@ -91,16 +106,21 @@ SHOW_NAME = "display_username_win: true"
 RESET_ON_ERROR = "prefer_reset_on_error: true"
 ENABLE_AV_CHECK = "enable_malware_protection: true"
 THREADED_AV_CHECK = "threaded_mw_protection: true"
+USE_SAFE_MODE = "safe_mode: true"
 
-if os.name == "nt" and os.path.isfile(DATAPATH + "/config"):
-    if not (EMULATE_LINUX in config):NON_WIN = False;osext=""
-    else:NON_WIN = True;osext=" (Linux Emulation)"
-elif not os.path.isfile(DATAPATH + "/config"):
-    NON_WIN = False;osext=""
+try:
+    if os.name == "nt" and os.path.isfile(DATAPATH + "/config"):
+        if not (EMULATE_LINUX in config):NON_WIN = False;osext=""
+        else:NON_WIN = True;osext=" (Linux Emulation)"
+    elif not os.path.isfile(DATAPATH + "/config"):
+        NON_WIN = False;osext=""
+except:
+    NON_WIN = True;osext=""
 
 print("\a")
 
-os.system('cls')
+try:os.system('cls')
+except:NotImplemented
 if not ISDEV:
     print(DULLYELLOW + "WinLine " + Appversion + osext + RESET)
 else:
@@ -112,22 +132,19 @@ if NON_WIN:
 
 print("")
 
-if not NON_WIN:
-    location = DRIVELETTER + ":/"
-    last_location = ""
-    locprefix = ""
-else:
+try:
+    if not NON_WIN:
+        location = DRIVELETTER + ":/"
+        last_location = ""
+        locprefix = ""
+    else:
+        location = "/"
+        last_location = ""
+        locprefix = MAGENTA + os.getlogin() + BLUE + "@" + SPECIALDRIVE + socket.gethostname() + RESET + " "
+except:
     location = "/"
     last_location = ""
-    locprefix = MAGENTA + os.getlogin() + BLUE + "@" + SPECIALDRIVE + socket.gethostname() + RESET + " "
-
-if not NON_WIN:
-    try:
-        cxrDevLocation = open(DATAPATH + "/cxr_dev_path", "r")
-    except:
-        cxrDevLocation = open(DATAPATH + "/cxr_dev_path", "x")
-        cxrDevLocation.close()
-        cxrDevLocation = open(DATAPATH + "/cxr_dev_path", "r")
+    locprefix = ""
 
 def get_drives():
     if not NON_WIN:
@@ -148,6 +165,7 @@ def get_drives():
         print(RED + "This feature is only available on Windows systems" + RESET)
 
 def doConfig():
+    global config
     if not NON_WIN:
         if not (os.path.isfile(DATAPATH + "/config")) or (open(DATAPATH + "/config", "r").read() == ""):
             sleep(0.75)
@@ -188,6 +206,7 @@ def doConfig():
                 file.write("\nprefer_reset_on_error: false")
                 file.write("\nenable_malware_protection: true")
                 file.write("\nthreaded_mw_protection: true")
+                file.write("\nsafe_mode: false")
                 file.close()
 
             except:
@@ -222,6 +241,12 @@ def doConfig():
             print(DULLYELLOW + "To get started, use " + BLUE + "help " + DULLYELLOW + "to list supported commands.\n\n" + RESET)
 
             config = open(DATAPATH + "/config", "r").read()
+
+        if not os.path.isdir(DATAPATH + "/components"):
+            try:
+                os.mkdir(DATAPATH + "/components")
+            except:
+                NotImplemented
 
         if not os.path.isdir(DATAPATH + "/components/staging"):
             try:
@@ -275,21 +300,23 @@ if not (NON_WIN) and (SHOW_NAME in config):
     except:
         NotImplemented
 
-if (ALLOW_COMPONENTS in config):
-    if not NON_WIN:
-        try:
-            for add_on in os.listdir(DRIVELETTER + ":/ProgramData/WinLine/components/"):
-                if (".py" in add_on):loaded_components.append(add_on.split(".", 1)[0]);enabled_components.append(add_on.split(".", 1)[0])
+if not (USE_SAFE_MODE in config):
+    if (ALLOW_COMPONENTS in config):
+        if not NON_WIN:
+            try:
+                for add_on in os.listdir(DRIVELETTER + ":/ProgramData/WinLine/components/"):
+                    if (".py" in add_on):loaded_components.append(add_on.split(".", 1)[0]);enabled_components.append(add_on.split(".", 1)[0])
 
-            for add_on in os.listdir(DRIVELETTER + ":/ProgramData/WinLine/components/unloaded"):
-                if (".py" in add_on):enabled_components.append(add_on.split(".", 1)[0])
-        except:loaded_components=[]
-        try:
-            if (open(DATAPATH + "/development_components.txt").read() != ""):
-                print(DEV_COMPONENT + "Developer components are installed" + RESET)
-        except:NotImplemented
-else:loaded_components=[];print(RED + "Components have been disabled from the config file" + RESET);os.system("title WinLine %s (components disabled)"%Appversion)
-
+                for add_on in os.listdir(DRIVELETTER + ":/ProgramData/WinLine/components/unloaded"):
+                    if (".py" in add_on):enabled_components.append(add_on.split(".", 1)[0])
+            except:loaded_components=[]
+            try:
+                if (open(DATAPATH + "/development_components.txt").read() != ""):
+                    print(DEV_COMPONENT + "Developer components are installed" + RESET)
+            except:NotImplemented
+    else:loaded_components=[];print(RED + "Components have been disabled from the config file" + RESET);os.system("title WinLine %s (components disabled)"%Appversion)
+else:
+    print(YELLOW + "Safe mode is active" + RESET);os.system("title WinLine %s (safe mode)"%Appversion)
 
 def checkForDangerousComponents():
     global found_dangerous
@@ -304,13 +331,16 @@ def checkForDangerousComponents():
         if not THREADED_AV_CHECK in config:
             print(RED + "WARNING: Unable to reach A/V server. Built-in A/V may not be fully effective!" + RESET)
 
-    for component in os.listdir(DATAPATH + "/components/disabled"):
-        if component.split(".")[0] in unsafe_components:
-            dangerousCount += 1
-            try:
-                found_dangerous.append(component)
-            except Exception as err:
-                NotImplemented
+    try:
+        for component in os.listdir(DATAPATH + "/components/disabled"):
+            if component.split(".")[0] in unsafe_components:
+                dangerousCount += 1
+                try:
+                    found_dangerous.append(component)
+                except Exception as err:
+                    NotImplemented
+    except:
+        NotImplemented
 
     for component in enabled_components:
         if component in unsafe_components:
@@ -337,8 +367,8 @@ def main():
 
 
             if (command.lower() == "help"):
-                print(BLUE + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'clock', 'list-drives', stress, 'stress-2', 'monitor', 'components', 'change-name', 'user', 'battery-report', 'mount_folder', 'reconfigure'")
-                print("help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nclock: start the clock service, use ctrl+c to resume normal operation.\nlist-drives: lists all drives currently connected to the device\nstress: run a CPU stress test, usually capable of redlining all CPU cores on reasonable systems\nstress-2: run a RAM stress test, usually capable of redlining RAM and maxing swap\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\nmount_folder [network drive] [local drive] [folder]: mount [folder] from [local drive] as a network drive with letter [network drive]\nunmount_folder [network drive]: unmount a network drive\nreconfigure: update the config file to work with the installed version of WinLine\n" + RESET)
+                print(BLUE + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'clock', 'list-drives', stress, 'stress-2', 'monitor', 'components', 'change-name', 'user', 'battery-report', 'mount_folder', 'wldata', 'edition', 'path', 'reconfigure'")
+                print("help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nclock: start the clock service, use ctrl+c to resume normal operation.\nlist-drives: lists all drives currently connected to the device\nstress: run a CPU stress test, usually capable of redlining all CPU cores on reasonable systems\nstress-2: run a RAM stress test, usually capable of redlining RAM and maxing swap\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\nmount_folder [network drive] [local drive] [folder]: mount [folder] from [local drive] as a network drive with letter [network drive]\nunmount_folder [network drive]: unmount a network drive\nreconfigure: update the config file to work with the installed version of WinLine\nwldata: open data folder\nedition: get info about release edition\npath: print the current working directory\n" + RESET)
                 # """camx [flags]: launch CamX: Rebirth if installed. use '--new' to launch in a new terminal and '--dev' to launch from a developer installation\n"""
                 
                 print(SPECIALDRIVE + "cmd: directly interface with Windows' command line. Exit cmd with ctrl+c or typing 'exit' to return to WinLine\npowershell: switch the current WinLine instance to a Powershell terminal. Use 'exit' to return to WinLine" + RESET)
@@ -703,11 +733,13 @@ def main():
 
 
             elif (command.split(maxsplit=1)[0] == "sysRun"):
-
-                try:
-                    os.system(command.split(maxsplit=1)[1])
-                except KeyboardInterrupt:
-                    print("")
+                if not (USE_SAFE_MODE in config):
+                    try:
+                        os.system(command.split(maxsplit=1)[1])
+                    except KeyboardInterrupt:
+                        print("")
+                else:
+                    print(YELLOW + "Disabled in safe mode" + RESET)
 
 
             elif (command == "cmd"):
@@ -832,75 +864,84 @@ def main():
                     print(RED + "This feature is only available on Windows")
 
             elif command == "monitor":
-                try:
-                    sys.stdout.write(u"\x1b[?25l")
-                    cached_battery = "okay"
-                    # for level in range(0, 100, 1):
-                    #     import psutil
-                    #     print(utilities.colorBatteryPercentage(level, psutil.sensors_battery(), RED, YELLOW, SPECIALDRIVE, BLUE, CRITICAL_BATTERY, RESET ))
-                    # time.sleep(30)
-                    while True:
-                        import psutil
-
-                        cpuPercentage = psutil.cpu_percent(percpu=True)
-                        cpuTime = psutil.cpu_times_percent()
-                        diskUsage = psutil.disk_usage(DRIVELETTER + ":/")
-                        completeCpuUsageString = ""
-                        coreN = 1
-                        ramPercentage = str(utilities.colorCpuUsage("", psutil.virtual_memory()[2],RED, YELLOW, SPECIALDRIVE, RESET))
-                        ramUsage = (str(utilities.colorRamUsage(psutil.virtual_memory().used/(1024.0 ** 3),psutil.virtual_memory().total/(1024.0 ** 3),RED, YELLOW, SPECIALDRIVE, RESET)))
-                        # ramUsage = psutil.virtual_memory()[1]
-                        swapPercentage = str(utilities.colorCpuUsage("", psutil.swap_memory().percent,RED, YELLOW, SPECIALDRIVE, RESET))
-                        swapUsage = str(utilities.colorRamUsage(psutil.swap_memory().used/(1024.0 ** 3),psutil.swap_memory().total/(1024.0 ** 3),RED, YELLOW, SPECIALDRIVE, RESET))
-                        battery = psutil.sensors_battery()
-                        batteryCharge = str(utilities.colorBatteryPercentage(int(battery.percent), battery, RED, YELLOW, SPECIALDRIVE, BLUE, CRITICAL_BATTERY, RESET))
-
-                        try:
-                            net_stat = str(psutil.net_if_stats().get("Wi-Fi").isup)
-                        except:net_stat = False
-
-                        for core in cpuPercentage:
-                            completeCpuUsageString = completeCpuUsageString + utilities.colorCpuUsage(coreN, int(core), RED, YELLOW, SPECIALDRIVE, RESET) + " | "
-                            coreN += 1
-                    
-                        completeCpuUsageString= completeCpuUsageString + utilities.colorCpuUsage("total", psutil.cpu_percent(percpu=False), RED, YELLOW, SPECIALDRIVE, RESET) + " avg"
-
-                        completeCpuTime = "%s | %s | %s "%(utilities.colorCpuTime("User", cpuTime[0], RED, DULLYELLOW, SPECIALDRIVE, RESET),utilities.colorCpuTime("System",cpuTime[1], RED, DULLYELLOW, SPECIALDRIVE, RESET),utilities.colorCpuTimeInverse("Idle",cpuTime[2], RED, DULLYELLOW, SPECIALDRIVE, RESET))
-                        
-                        print(u"\x1b[0J\x1b[H")
-                        sys.stdout.write(u"\x1b[?25l")
-                        os.system("cls")
-                        # print(u"\x1b[?25l")
-                        print("CPU: " + completeCpuUsageString)
-                        print("CPU: " + str(completeCpuTime))
-                        print(RESET + "RAM: " + str(ramPercentage) + " | " + str(ramUsage))
-                        print(RESET + "Swap: " + str(swapPercentage + " | " + swapUsage))
-                        # print(RESET + "Disk: " + str(diskUsage.free/1e+9) + " GB /" + str(diskUsage.total/1e+9) + " GB (%s)"%diskUsage.percent)
-                        print(RESET + "Battery: " + str(batteryCharge))
-                        print(RESET + "Network: " + str(psutil.net_io_counters(pernic=False, nowrap=True).bytes_sent) + " sent, " + str(psutil.net_io_counters(pernic=False, nowrap=True).packets_recv) + " received, " + utilities.colorNetStatus(net_stat, RED, YELLOW, SPECIALDRIVE, RESET))
-                        print(YELLOW + "\nLooking for a battery health report? Run the " + BLUE + "battery-report" + YELLOW + " command instead" + RESET)
-                        time.sleep(1)
-
-                except ModuleNotFoundError:
-                    sys.stdout.write(u"\x1b[?25h")
-                    print(RED + "Installing dependency" + RESET)
+                if not (USE_SAFE_MODE in config):
                     try:
-                        subprocess.call("pip install psutil")
-                        print(DULLYELLOW + "Run " + BLUE + " term -r" + DULLYELLOW + " to finish installation")
-                    except:print(RED + "Error while installing." + RESET)
+                        sys.stdout.write(u"\x1b[?25l")
+                        cached_battery = "okay"
+                        # for level in range(0, 100, 1):
+                        #     import psutil
+                        #     print(utilities.colorBatteryPercentage(level, psutil.sensors_battery(), RED, YELLOW, SPECIALDRIVE, BLUE, CRITICAL_BATTERY, RESET ))
+                        # time.sleep(30)
+                        while True:
+                            import psutil
 
-                except KeyboardInterrupt:
-                    print("\n")
-                    sys.stdout.write(u"\x1b[?25h")
+                            cpuPercentage = psutil.cpu_percent(percpu=True)
+                            cpuTime = psutil.cpu_times_percent()
+                            diskUsage = psutil.disk_usage(DRIVELETTER + ":/")
+                            completeCpuUsageString = ""
+                            coreN = 1
+                            ramPercentage = str(utilities.colorCpuUsage("", psutil.virtual_memory()[2],RED, YELLOW, SPECIALDRIVE, RESET))
+                            ramUsage = (str(utilities.colorRamUsage(psutil.virtual_memory().used/(1024.0 ** 3),psutil.virtual_memory().total/(1024.0 ** 3),RED, YELLOW, SPECIALDRIVE, RESET)))
+                            # ramUsage = psutil.virtual_memory()[1]
+                            swapPercentage = str(utilities.colorCpuUsage("", psutil.swap_memory().percent,RED, YELLOW, SPECIALDRIVE, RESET))
+                            swapUsage = str(utilities.colorRamUsage(psutil.swap_memory().used/(1024.0 ** 3),psutil.swap_memory().total/(1024.0 ** 3),RED, YELLOW, SPECIALDRIVE, RESET))
+                            battery = psutil.sensors_battery()
+                            batteryCharge = str(utilities.colorBatteryPercentage(int(battery.percent), battery, RED, YELLOW, SPECIALDRIVE, BLUE, CRITICAL_BATTERY, RESET))
 
-                except Exception as err:
-                    print(RED + "Error: " + str(err) + RESET)
-                    sys.stdout.write(u"\x1b[?25h")
+                            try:
+                                net_stat = str(psutil.net_if_stats().get("Wi-Fi").isup)
+                            except:net_stat = False
+
+                            for core in cpuPercentage:
+                                completeCpuUsageString = completeCpuUsageString + utilities.colorCpuUsage(coreN, int(core), RED, YELLOW, SPECIALDRIVE, RESET) + " | "
+                                coreN += 1
+                        
+                            completeCpuUsageString= completeCpuUsageString + utilities.colorCpuUsage("total", psutil.cpu_percent(percpu=False), RED, YELLOW, SPECIALDRIVE, RESET) + " avg"
+
+                            completeCpuTime = "%s | %s | %s "%(utilities.colorCpuTime("User", cpuTime[0], RED, DULLYELLOW, SPECIALDRIVE, RESET),utilities.colorCpuTime("System",cpuTime[1], RED, DULLYELLOW, SPECIALDRIVE, RESET),utilities.colorCpuTimeInverse("Idle",cpuTime[2], RED, DULLYELLOW, SPECIALDRIVE, RESET))
+                            
+                            print(u"\x1b[0J\x1b[H")
+                            sys.stdout.write(u"\x1b[?25l")
+                            os.system("cls")
+                            # print(u"\x1b[?25l")
+                            print("CPU: " + completeCpuUsageString)
+                            print("CPU: " + str(completeCpuTime))
+                            print(RESET + "RAM: " + str(ramPercentage) + " | " + str(ramUsage))
+                            print(RESET + "Swap: " + str(swapPercentage + " | " + swapUsage))
+                            # print(RESET + "Disk: " + str(diskUsage.free/1e+9) + " GB /" + str(diskUsage.total/1e+9) + " GB (%s)"%diskUsage.percent)
+                            print(RESET + "Battery: " + str(batteryCharge))
+                            print(RESET + "Network: " + str(psutil.net_io_counters(pernic=False, nowrap=True).bytes_sent) + " sent, " + str(psutil.net_io_counters(pernic=False, nowrap=True).packets_recv) + " received, " + utilities.colorNetStatus(net_stat, RED, YELLOW, SPECIALDRIVE, RESET))
+                            print(YELLOW + "\nLooking for a battery health report? Run the " + BLUE + "battery-report" + YELLOW + " command instead" + RESET)
+                            time.sleep(1)
+
+                    except ModuleNotFoundError:
+                        sys.stdout.write(u"\x1b[?25h")
+                        print(RED + "Installing dependency" + RESET)
+                        try:
+                            subprocess.call("pip install psutil")
+                            print(DULLYELLOW + "Run " + BLUE + " term -r" + DULLYELLOW + " to finish installation")
+                        except:print(RED + "Error while installing." + RESET)
+                
+
+                    except KeyboardInterrupt:
+                        print("\n")
+                        sys.stdout.write(u"\x1b[?25h")
+
+                    except Exception as err:
+                        print(RED + "Error: " + str(err) + RESET)
+                        sys.stdout.write(u"\x1b[?25h")
+                
+                else:
+                    print(YELLOW + "Disabled in safe mode" + RESET)
 
             elif command.split()[0] == "size":
-                try:
-                    print(os.path.getsize(command.split()[1]))
-                except Exception as err:print(str(err))
+                if not os.path.isdir(command.split()[1]):
+                    size = os.path.getsize(command.split()[1])
+                    try:
+                        
+                        print(str(round(size/1e+6, 3)) + " MB")
+                    except Exception as err:print(str(err))
+                else:print(YELLOW + "This command only works for files!\n" + RESET)
 
             elif command == "battery-report":
                 if NON_WIN:
@@ -913,304 +954,307 @@ def main():
             elif ("components" in command or "component" in command or "addons" in command):
                 if NON_WIN:print(RED + "Warning: Components are not supported on non-Windows systems")
                 if not (ALLOW_COMPONENTS in config):print(RED + "Warning: Components have been disallowed from the configuration file\n\n" + RESET)
-                try:
-                    try:flags = command.split(maxsplit=1)[1]
-                    except: flags = ""
+                if not (USE_SAFE_MODE in config):
+                    try:
+                        try:flags = command.split(maxsplit=1)[1]
+                        except: flags = ""
 
-                    if ("--unload" in flags):
-                        try:whatToUnload = command.split(maxsplit=2)[2]
-                        except:whatToUnload = "all"
-                        ignore_load_status = open(DATAPATH + "/development_components.txt").read()
+                        if ("--unload" in flags):
+                            try:whatToUnload = command.split(maxsplit=2)[2]
+                            except:whatToUnload = "all"
+                            ignore_load_status = open(DATAPATH + "/development_components.txt").read()
 
-                        
-
-                        if whatToUnload == "all":
-                            print(RED + "Unloading all components..." + RESET)
-                            while len(loaded_components) > 0:
-                                gotten = loaded_components.pop()
-                                shutil.move(DATAPATH + "/components/%s.py"%gotten, DATAPATH + "/components/unloaded/%s.py"%gotten)
-                                print(DRIVES + "Component %s unloaded"%gotten + RESET)
-                                # print(loaded_components)
-                                time.sleep(0.1)
-                        else:
-                            if (whatToUnload in loaded_components) and not whatToUnload in ignore_load_status:
-                                try:
-                                    shutil.move(DATAPATH + "/components/%s.py"%whatToUnload, DATAPATH + "/components/unloaded/%s.py"%whatToUnload)
-                                    loaded_components.remove(whatToUnload)
-                                    print(DRIVES + "Component unloaded" + RESET)
-                                except:
-                                    print(RED + "Unable to unload component" + RESET)
-
-                            elif whatToUnload in ignore_load_status:
-                                print(DEV_COMPONENT + "Developer components can't be unloaded" + RESET)
-                            elif (whatToUnload in enabled_components):print(RED + "Component already unloaded" + RESET)
                             
-                            else:print(RED + "Component can't be loaded because it's not enabled. Restart WinLine to enable it" + RESET)
 
-                    elif "--load" in flags:
-                        if (ALLOW_COMPONENTS in config):
-                            try:
-                                whatToLoad = command.split(maxsplit=2)[2]
-                                ignore_load_status = open(DATAPATH + "/development_components.txt").read()
-
-                                if (whatToLoad in enabled_components) and not whatToLoad in ignore_load_status:
+                            if whatToUnload == "all":
+                                print(RED + "Unloading all components..." + RESET)
+                                while len(loaded_components) > 0:
+                                    gotten = loaded_components.pop()
+                                    shutil.move(DATAPATH + "/components/%s.py"%gotten, DATAPATH + "/components/unloaded/%s.py"%gotten)
+                                    print(DRIVES + "Component %s unloaded"%gotten + RESET)
+                                    # print(loaded_components)
+                                    time.sleep(0.1)
+                            else:
+                                if (whatToUnload in loaded_components) and not whatToUnload in ignore_load_status:
                                     try:
-                                        shutil.move(DATAPATH + "/components/unloaded/%s.py"%whatToLoad, DATAPATH + "/components/%s.py"%whatToLoad)
-                                        loaded_components.append(whatToLoad)
-                                        print(DRIVES + "Component loaded" + RESET)
-                                    except:
-                                        print(RED + "Unable to load component" + RESET)
-
-                                elif whatToLoad in ignore_load_status:
-                                    print(DEV_COMPONENT + "Developer components are always loaded" + RESET)
-                                
-                                elif (whatToLoad in loaded_components):
-                                    print(YELLOW + "Component is already loaded" + RESET)
-
-                                else:
-                                    print(RED + "Component can't be loaded" + RESET)
-
-                            except:
-                                loaded_components.clear()
-                                loaded_components = enabled_components
-                                print(RED + "Loading all components..." + RESET)
-
-                                for gotten in loaded_components:
-                                    try:
-                                        shutil.move(DATAPATH + "/components/unloaded/%s.py"%gotten, DATAPATH + "/components/%s.py"%gotten)
-                                        print(DRIVES + "Component %s loaded"%gotten + RESET)
-                                        time.sleep(0.1)
+                                        shutil.move(DATAPATH + "/components/%s.py"%whatToUnload, DATAPATH + "/components/unloaded/%s.py"%whatToUnload)
+                                        loaded_components.remove(whatToUnload)
+                                        print(DRIVES + "Component unloaded" + RESET)
                                     except:
                                         print(RED + "Unable to unload component" + RESET)
-                        else: print(RED + "Components have been disallowed from the configuration file" + RESET)
 
-                    elif "--help" in flags or "-h" in flags:
-                        print(YELLOW + "Format: components <option> <addon component>\nDo not supply any options to see a list of components and their status\n\n" + RED + "FLAGS:")
-                        print(DRIVES + "'--unload <addon>' unloads the chosen module. to unload all modules, do not supply an addon name in <addon>\n--'--load <addon>' loads the chosen module, if it's unloaded and available. to load all modules, do not supply an addon name in <addon>\n'--install' opens a file picker to install new components\n'--purge <addon>' uninstalls the chosen addon" + RESET)
+                                elif whatToUnload in ignore_load_status:
+                                    print(DEV_COMPONENT + "Developer components can't be unloaded" + RESET)
+                                elif (whatToUnload in enabled_components):print(RED + "Component already unloaded" + RESET)
+                                
+                                else:print(RED + "Component can't be loaded because it's not enabled. Restart WinLine to enable it" + RESET)
 
-                    elif "--disable" in flags:
-                        whatToDisable = command.split(maxsplit=2)[2]
-                        if not whatToDisable in open(DATAPATH + "/development_components.txt").read():
-                            try:
-                                shutil.move(DATAPATH + "/components/%s.py"%whatToDisable, DATAPATH + "/components/disabled/%s.py"%whatToDisable)
-                                enabled_components.remove(whatToDisable)
-                                loaded_components.remove(whatToDisable)
-                                print(DRIVES + "Component disabled" + RESET)
-                            except:
-                                print(RED + "Unable to disable the component" + RESET)
-                        else:
-                            print(DEV_COMPONENT + "Developer components can't be disabled" + RESET)
+                        elif "--load" in flags:
+                            if (ALLOW_COMPONENTS in config):
+                                try:
+                                    whatToLoad = command.split(maxsplit=2)[2]
+                                    ignore_load_status = open(DATAPATH + "/development_components.txt").read()
 
-                    elif "--enable" in flags:
-                        if (ALLOW_COMPONENTS in config):
-                            whatToEnable = command.split(maxsplit=2)[2]
-                            if not whatToEnable in open(DATAPATH + "/development_components.txt").read():
-                                if not (whatToEnable in found_dangerous):
-                                    try:
-                                        shutil.move(DATAPATH + "/components/disabled/%s.py"%whatToEnable, DATAPATH + "/components/unloaded/%s.py"%whatToEnable)
-                                        print(DRIVES + "Component enabled" + RESET)
-                                        enabled_components.append(whatToEnable)
-                                    except Exception as err:print(RED + "The component could not be enabled %s"%str(err) + RESET)
-                                else:
-                                    print(RED + "WARNING: this component has been marked as dangerous by the development team. This usually means this component acts like malware or a virus. You should NOT enable this component." + RESET)
-                                    contenable = input(BLUE + "Are you sure you want to continue? [Y/N] > " + RESET).capitalize()
+                                    if (whatToLoad in enabled_components) and not whatToLoad in ignore_load_status:
+                                        try:
+                                            shutil.move(DATAPATH + "/components/unloaded/%s.py"%whatToLoad, DATAPATH + "/components/%s.py"%whatToLoad)
+                                            loaded_components.append(whatToLoad)
+                                            print(DRIVES + "Component loaded" + RESET)
+                                        except:
+                                            print(RED + "Unable to load component" + RESET)
 
-                                    if contenable == "Y":
+                                    elif whatToLoad in ignore_load_status:
+                                        print(DEV_COMPONENT + "Developer components are always loaded" + RESET)
+                                    
+                                    elif (whatToLoad in loaded_components):
+                                        print(YELLOW + "Component is already loaded" + RESET)
+
+                                    else:
+                                        print(RED + "Component can't be loaded" + RESET)
+
+                                except:
+                                    loaded_components.clear()
+                                    loaded_components = enabled_components
+                                    print(RED + "Loading all components..." + RESET)
+
+                                    for gotten in loaded_components:
+                                        try:
+                                            shutil.move(DATAPATH + "/components/unloaded/%s.py"%gotten, DATAPATH + "/components/%s.py"%gotten)
+                                            print(DRIVES + "Component %s loaded"%gotten + RESET)
+                                            time.sleep(0.1)
+                                        except:
+                                            print(RED + "Unable to unload component" + RESET)
+                            else: print(RED + "Components have been disallowed from the configuration file" + RESET)
+
+                        elif "--help" in flags or "-h" in flags:
+                            print(YELLOW + "Format: components <option> <addon component>\nDo not supply any options to see a list of components and their status\n\n" + RED + "FLAGS:")
+                            print(DRIVES + "'--unload <addon>' unloads the chosen module. to unload all modules, do not supply an addon name in <addon>\n--'--load <addon>' loads the chosen module, if it's unloaded and available. to load all modules, do not supply an addon name in <addon>\n'--install' opens a file picker to install new components\n'--purge <addon>' uninstalls the chosen addon" + RESET)
+
+                        elif "--disable" in flags:
+                            whatToDisable = command.split(maxsplit=2)[2]
+                            if not whatToDisable in open(DATAPATH + "/development_components.txt").read():
+                                try:
+                                    shutil.move(DATAPATH + "/components/%s.py"%whatToDisable, DATAPATH + "/components/disabled/%s.py"%whatToDisable)
+                                    enabled_components.remove(whatToDisable)
+                                    loaded_components.remove(whatToDisable)
+                                    print(DRIVES + "Component disabled" + RESET)
+                                except:
+                                    print(RED + "Unable to disable the component" + RESET)
+                            else:
+                                print(DEV_COMPONENT + "Developer components can't be disabled" + RESET)
+
+                        elif "--enable" in flags:
+                            if (ALLOW_COMPONENTS in config):
+                                whatToEnable = command.split(maxsplit=2)[2]
+                                if not whatToEnable in open(DATAPATH + "/development_components.txt").read():
+                                    if not (whatToEnable in found_dangerous):
                                         try:
                                             shutil.move(DATAPATH + "/components/disabled/%s.py"%whatToEnable, DATAPATH + "/components/unloaded/%s.py"%whatToEnable)
                                             print(DRIVES + "Component enabled" + RESET)
                                             enabled_components.append(whatToEnable)
                                         except Exception as err:print(RED + "The component could not be enabled %s"%str(err) + RESET)
-                            else: print(DEV_COMPONENT + "Developer components are always enabled" + RESET)
-                        else:
-                            print(RED + "Components have been disallowed from the configuration file" + RESET)
+                                    else:
+                                        print(RED + "WARNING: this component has been marked as dangerous by the development team. This usually means this component acts like malware or a virus. You should NOT enable this component." + RESET)
+                                        contenable = input(BLUE + "Are you sure you want to continue? [Y/N] > " + RESET).capitalize()
 
-                    elif "--purge" in flags:
-                        whatToPurge = command.split(maxsplit=2)[2]
-                        if not (whatToPurge in loaded_components) and os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/disabled/%s.py"%whatToPurge):
-                            print(RED + "WARNING: Purging components will ERASE THEM FROM YOUR DEVICE. This CANNOT be undone.")
-                            contin = input(YELLOW + "Are you sure you want to continue? [Y/N] > ").capitalize()
+                                        if contenable == "Y":
+                                            try:
+                                                shutil.move(DATAPATH + "/components/disabled/%s.py"%whatToEnable, DATAPATH + "/components/unloaded/%s.py"%whatToEnable)
+                                                print(DRIVES + "Component enabled" + RESET)
+                                                enabled_components.append(whatToEnable)
+                                            except Exception as err:print(RED + "The component could not be enabled %s"%str(err) + RESET)
+                                else: print(DEV_COMPONENT + "Developer components are always enabled" + RESET)
+                            else:
+                                print(RED + "Components have been disallowed from the configuration file" + RESET)
 
-                            if contin == "Y":
-                                os.remove(DRIVELETTER + ":/ProgramData/winLine/components/disabled/%s.py"%whatToPurge)
+                        elif "--purge" in flags:
+                            whatToPurge = command.split(maxsplit=2)[2]
+                            if not (whatToPurge in loaded_components) and os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/disabled/%s.py"%whatToPurge):
+                                print(RED + "WARNING: Purging components will ERASE THEM FROM YOUR DEVICE. This CANNOT be undone.")
+                                contin = input(YELLOW + "Are you sure you want to continue? [Y/N] > ").capitalize()
 
-                                if os.path.isdir(DATAPATH + "/components/packs/%s"%whatToPurge):
-                                    try:
-                                        shutil.rmtree(DATAPATH + "/components/packs/%s"%whatToPurge)
-                                    except:NotImplemented
+                                if contin == "Y":
+                                    os.remove(DRIVELETTER + ":/ProgramData/winLine/components/disabled/%s.py"%whatToPurge)
 
-                                print(DRIVES + "The component was purged" + RESET)
+                                    if os.path.isdir(DATAPATH + "/components/packs/%s"%whatToPurge):
+                                        try:
+                                            shutil.rmtree(DATAPATH + "/components/packs/%s"%whatToPurge)
+                                        except:NotImplemented
 
-                                if (whatToPurge in enabled_components):
-                                    enabled_components.remove(whatToPurge)
+                                    print(DRIVES + "The component was purged" + RESET)
+
+                                    if (whatToPurge in enabled_components):
+                                        enabled_components.remove(whatToPurge)
+
+                                else:
+                                    print(BLUE + "abort." + RESET)
+
+                            elif not (os.path.isfile(DATAPATH + "/components/%s.py"%whatToPurge)):
+                                print(RED + "Component not found" + RESET)
 
                             else:
-                                print(BLUE + "abort." + RESET)
+                                print(RED + "The component is still loaded and cannot be purged. Please run " + BLUE + "components --disable %s"%whatToPurge + RESET)
 
-                        elif not (os.path.isfile(DATAPATH + "/components/%s.py"%whatToPurge)):
-                            print(RED + "Component not found" + RESET)
+                        elif "--install" in flags:
+                                try:
+                                    import tkinter.filedialog as getFile, tkinter
 
-                        else:
-                            print(RED + "The component is still loaded and cannot be purged. Please run " + BLUE + "components --disable %s"%whatToPurge + RESET)
+                                    root = tkinter.Tk()
+                                    root.wm_geometry("1x1")
+                                    root.grid_anchor("center")
+                                    root.wm_title("")
+                                    # root.iconify()
 
-                    elif "--install" in flags:
-                            try:
-                                import tkinter.filedialog as getFile, tkinter
+                                    fileToUpload = getFile.askopenfilename(title="Select Component / Package", filetypes=[("Component Files", ("*.py", "*.wcp")), ("Component Package", "*.wcp")])
 
-                                root = tkinter.Tk()
-                                root.wm_geometry("1x1")
-                                root.grid_anchor("center")
-                                root.wm_title("")
-                                # root.iconify()
+                                    root.destroy()
 
-                                fileToUpload = getFile.askopenfilename(title="Select Component / Package", filetypes=[("Component Files", ("*.py", "*.wcp")), ("Component Package", "*.wcp")])
+                                    if (fileToUpload != "" and fileToUpload != None):select_valid = True
+                                    else:select_valid = False
+                                    if ".wcp" in fileToUpload:select_valid = "pack"
 
-                                root.destroy()
+                                    if (select_valid == True):
+                                        name = fileToUpload.split("/")[len(fileToUpload.split("/"))-1]
+                                        print(YELLOW + "Installing selected component: %s"%str(name) + RESET)
 
-                                if (fileToUpload != "" and fileToUpload != None):select_valid = True
-                                else:select_valid = False
-                                if ".wcp" in fileToUpload:select_valid = "pack"
-
-                                if (select_valid == True):
-                                    name = fileToUpload.split("/")[len(fileToUpload.split("/"))-1]
-                                    print(YELLOW + "Installing selected component: %s"%str(name) + RESET)
-
-                                    try:
-                                        shutil.copy(fileToUpload, DATAPATH + "/components/%s"%(name))
+                                        try:
+                                            shutil.copy(fileToUpload, DATAPATH + "/components/%s"%(name))
 
 
-                                        time.sleep(2)
-                                        print(SPECIALDRIVE + "Component %s installed! Use the 'term -r' command to load it"%(name) + RESET)
-                                    except Exception as err:
-                                        print(RED + "Failed to install the component: " + YELLOW + str(err) + RESET)
+                                            time.sleep(2)
+                                            print(SPECIALDRIVE + "Component %s installed! Use the 'term -r' command to load it"%(name) + RESET)
+                                        except Exception as err:
+                                            print(RED + "Failed to install the component: " + YELLOW + str(err) + RESET)
 
-                                elif (select_valid == "pack"):
-                                    packname = fileToUpload.split("/")[len(fileToUpload.split("/"))-1]
-                                    stage_path = DATAPATH + "/components/staging/%s"%packname
-                                    good_install = False 
-                                    print(YELLOW + "Staging package: %s"%packname + RESET)
+                                    elif (select_valid == "pack"):
+                                        packname = fileToUpload.split("/")[len(fileToUpload.split("/"))-1]
+                                        stage_path = DATAPATH + "/components/staging/%s"%packname
+                                        good_install = False 
+                                        print(YELLOW + "Staging package: %s"%packname + RESET)
 
-                                    try:
-                                        os.mkdir(stage_path)
-                                        with ZipFile(fileToUpload) as data:
-                                            data.extractall(stage_path)
-                                            data.close()
-                                        keepInstalling = True
-                                    except Exception as err:keepInstalling = False;print(RED + "Error while attempting to unpack the component package: %s"%str(err) + RESET)
-                                    
-                                    if keepInstalling:
-                                        if os.path.isfile(stage_path + "/manifest.json"):keepInstalling = True
-                                        else:keepInstalling = False;print(RED + "Package structure invalid: manifest.json not found" + RESET)
-
-                                    if keepInstalling:
-                                        rawmanifest_json = open(stage_path + "/manifest.json", "r")
-                                        manifest_json = json.load(rawmanifest_json)
-                                        package_name = manifest_json["package_name"]
-
-                                        print(YELLOW + "Installing package: " + package_name + RESET)
-
-                                        existing_files = 0
-                                        if os.path.isdir(DATAPATH + "/components/%s"%package_name):
-                                            for file in os.listdir(DATAPATH + "/components/%s"%package_name):
-                                                existing_files += 0
-
-                                            if existing_files != 0:
-                                                print(RED + "Aboring installation: this folder already exists and it already includes data" + RESET)
-                                                keepInstalling = False
+                                        try:
+                                            os.mkdir(stage_path)
+                                            with ZipFile(fileToUpload) as data:
+                                                data.extractall(stage_path)
+                                                data.close()
+                                            keepInstalling = True
+                                        except Exception as err:keepInstalling = False;print(RED + "Error while attempting to unpack the component package: %s"%str(err) + RESET)
+                                        
+                                        if keepInstalling:
+                                            if os.path.isfile(stage_path + "/manifest.json"):keepInstalling = True
+                                            else:keepInstalling = False;print(RED + "Package structure invalid: manifest.json not found" + RESET)
 
                                         if keepInstalling:
-                                            try:
-                                                shutil.copytree(stage_path, DATAPATH + "/components/packs/%s"%package_name)
-                                                shutil.move(DATAPATH + "/components/packs/%s/%s.py"%(package_name,package_name),DATAPATH + "/components/")
-                                                good_install = True
-                                            except Exception as err:
-                                                print(RED + "Failed to register package: " + str(err) + RESET)
+                                            rawmanifest_json = open(stage_path + "/manifest.json", "r")
+                                            manifest_json = json.load(rawmanifest_json)
+                                            package_name = manifest_json["package_name"]
 
-                                        rawmanifest_json.close()
-                                        shutil.rmtree(stage_path)
+                                            print(YELLOW + "Installing package: " + package_name + RESET)
 
-                                        if good_install:
-                                            print(SPECIALDRIVE + "Package installed!" + RESET)
+                                            existing_files = 0
+                                            if os.path.isdir(DATAPATH + "/components/%s"%package_name):
+                                                for file in os.listdir(DATAPATH + "/components/%s"%package_name):
+                                                    existing_files += 0
+
+                                                if existing_files != 0:
+                                                    print(RED + "Aboring installation: this folder already exists and it already includes data" + RESET)
+                                                    keepInstalling = False
+
+                                            if keepInstalling:
+                                                try:
+                                                    shutil.copytree(stage_path, DATAPATH + "/components/packs/%s"%package_name)
+                                                    shutil.move(DATAPATH + "/components/packs/%s/%s.py"%(package_name,package_name),DATAPATH + "/components/")
+                                                    good_install = True
+                                                except Exception as err:
+                                                    print(RED + "Failed to register package: " + str(err) + RESET)
+
+                                            rawmanifest_json.close()
+                                            shutil.rmtree(stage_path)
+
+                                            if good_install:
+                                                print(SPECIALDRIVE + "Package installed!" + RESET)
 
 
 
-                            except ModuleNotFoundError:
-                                print(RED + "Tkinter is not currently installed. Tkinter is required for this command to work" + RESET)
-                                print(YELLOW + "You can still manually install components by copying your .py file to this directory:" + BLUE + DATAPATH + "/components" + YELLOW + ". Please make sure the files are python .py files, or they will not be detected by WinLine" + RESET)
+                                except ModuleNotFoundError:
+                                    print(RED + "Tkinter is not currently installed. Tkinter is required for this command to work" + RESET)
+                                    print(YELLOW + "You can still manually install components by copying your .py file to this directory:" + BLUE + DATAPATH + "/components" + YELLOW + ". Please make sure the files are python .py files, or they will not be detected by WinLine" + RESET)
 
-                            except Exception as err:
-                                print(RED + "An error occurred: " + str(err) + RESET)
+                                except Exception as err:
+                                    print(RED + "An error occurred: " + str(err) + RESET)
 
-                    elif ("--debug" in flags):
-                        pcomp = os.listdir(DATAPATH + "/components/disabled")
-                        dcomp = os.listdir(DATAPATH + "/components")
-                        disabled = []
-                        present = []
-                        dev = []
-                        ignore_load_status = open(DATAPATH + "/development_components.txt").read()
-                        for addon in pcomp:
-                            if os.path.isfile(DATAPATH + "/components/disabled/%s"%addon) and ".py" in addon:
-                                disabled.append(addon.split(".")[0])
-                        for addon in dcomp:
-                            if os.path.isfile(DATAPATH + "/components/%s"%addon) and ".py" in addon:
-                                present.append(addon.split(".")[0])
+                        elif ("--debug" in flags):
+                            pcomp = os.listdir(DATAPATH + "/components/disabled")
+                            dcomp = os.listdir(DATAPATH + "/components")
+                            disabled = []
+                            present = []
+                            dev = []
+                            ignore_load_status = open(DATAPATH + "/development_components.txt").read()
+                            for addon in pcomp:
+                                if os.path.isfile(DATAPATH + "/components/disabled/%s"%addon) and ".py" in addon:
+                                    disabled.append(addon.split(".")[0])
+                            for addon in dcomp:
+                                if os.path.isfile(DATAPATH + "/components/%s"%addon) and ".py" in addon:
+                                    present.append(addon.split(".")[0])
 
-                        for addon in present:
-                            if (addon.split(".")[0] in ignore_load_status):
-                                dev.append(addon.split(".")[0])
-                        
-                        print(BLUE + "Component debug information")
-                        print(YELLOW + "Developer components: " + DEV_COMPONENT + str(dev))
-                        print(YELLOW + "Enabled components: " + SPECIALDRIVE + str(enabled_components))
-                        print(YELLOW + "Loaded components: " + SPECIALDRIVE + str(loaded_components))
-                        print(YELLOW + "Detected components: " + YELLOW + str(present))
-                        print(YELLOW + "Disabled components: " + RED + str(disabled) + RESET)
+                            for addon in present:
+                                if (addon.split(".")[0] in ignore_load_status):
+                                    dev.append(addon.split(".")[0])
+                            
+                            print(BLUE + "Component debug information")
+                            print(YELLOW + "Developer components: " + DEV_COMPONENT + str(dev))
+                            print(YELLOW + "Enabled components: " + SPECIALDRIVE + str(enabled_components))
+                            print(YELLOW + "Loaded components: " + SPECIALDRIVE + str(loaded_components))
+                            print(YELLOW + "Detected components: " + YELLOW + str(present))
+                            print(YELLOW + "Disabled components: " + RED + str(disabled) + RESET)
 
-                    else:
-                        if not (NON_WIN):
-                            print(YELLOW + "The following components are currently installed:" + RESET)
-                            dev_components = []
-                            for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/"):
-                                # if ".py" in component:
-                                    # print(loaded_components)
-                                    load_string = ""
-                                    ignore_load_status = open(DATAPATH + "/development_components.txt").read()
+                        else:
+                            if not (NON_WIN):
+                                print(YELLOW + "The following components are currently installed:" + RESET)
+                                dev_components = []
+                                for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/"):
+                                    # if ".py" in component:
+                                        # print(loaded_components)
+                                        load_string = ""
+                                        ignore_load_status = open(DATAPATH + "/development_components.txt").read()
 
-                                    if not (component.split(".", 1)[0] in ignore_load_status) and os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component):
-                                        if component.split(".", 1)[0] in found_dangerous:load_string="(DANGEROUS)";colorToUse=RED
-                                        elif(component.split(".", 1)[0] in loaded_components and component.split(".", 1)[0] in enabled_components):load_string=SPECIALDRIVE+"(loaded)";colorToUse=BLUE
-                                        elif(component.split(".", 1)[0] in enabled_components):load_string="(unloaded)";colorToUse=DRIVES
-                                        elif not (ALLOW_COMPONENTS in config):load_string=(RED + "(blacklisted)" + RESET);colorToUse=RED
-                                        elif not (os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component)):load_string=RED+"(unsupported format)";colorToUse=DRIVES
-                                        else:load_string=RED+"(restart WinLine to enable)";colorToUse=DRIVES
+                                        if not (component.split(".", 1)[0] in ignore_load_status) and os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component):
+                                            if component.split(".", 1)[0] in found_dangerous:load_string="(DANGEROUS)";colorToUse=RED
+                                            elif(component.split(".", 1)[0] in loaded_components and component.split(".", 1)[0] in enabled_components):load_string=SPECIALDRIVE+"(loaded)";colorToUse=BLUE
+                                            elif(component.split(".", 1)[0] in enabled_components):load_string="(unloaded)";colorToUse=DRIVES
+                                            elif not (ALLOW_COMPONENTS in config):load_string=(RED + "(blacklisted)" + RESET);colorToUse=RED
+                                            elif not (os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component)):load_string=RED+"(unsupported format)";colorToUse=DRIVES
+                                            else:load_string=RED+"(restart WinLine to enable)";colorToUse=DRIVES
 
-                                        print(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
-                                    elif os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component):
-                                        load_string=DEV_COMPONENT+"(developer)";colorToUse=DEV_COMPONENT
-                                        dev_components.append(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
+                                            print(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
+                                        elif os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component):
+                                            load_string=DEV_COMPONENT+"(developer)";colorToUse=DEV_COMPONENT
+                                            dev_components.append(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
 
-                            for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/unloaded"):
-                                if component in found_dangerous:load_string="(DANGEROUS)";colorToUse=RED
-                                else:load_string="(unloaded)";colorToUse=DRIVES
-                                print(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
+                                for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/unloaded"):
+                                    if component in found_dangerous:load_string="(DANGEROUS)";colorToUse=RED
+                                    else:load_string="(unloaded)";colorToUse=DRIVES
+                                    print(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
 
-                            if len(dev_components) != 0:
+                                if len(dev_components) != 0:
+                                    print("")
+                                    for dev_comp in dev_components:
+                                        print(dev_comp)
+
                                 print("")
-                                for dev_comp in dev_components:
-                                    print(dev_comp)
 
-                            print("")
+                                for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/disabled"):
+                                    if component in found_dangerous:
+                                        load_string="(DANGEROUS)";colorToUse=RED
+                                    else:load_string="(unloaded)";colorToUse=DRIVES
+                                    print(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
+                        
+                        print("")
 
-                            for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/disabled"):
-                                if component in found_dangerous:
-                                    load_string="(DANGEROUS)";colorToUse=RED
-                                else:load_string="(unloaded)";colorToUse=DRIVES
-                                print(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
-                    
-                    print("")
-
-                except Exception as err:
-                    print(RED + "Error occured: " + str(err) + RESET)
+                    except Exception as err:
+                        print(RED + "Error occured: " + str(err) + RESET)
+                else:
+                    print(YELLOW + "Disabled in safe mode\n" + RESET)
 
             
             elif (command == "config"):
@@ -1289,12 +1333,15 @@ def main():
 
             elif command == "edition" or command == "key":
                 try:
-                    if sys.path[0] == "c:\\Users\\%s\\Downloads\\VisualStudioCode\\Python\\winLine"%open("C:/ProgramData/PsychonDevStudios/userKey.txt", "r").read():
+                    if sys.path[0] == "c:\\Users\\%s\\Downloads\\VisualStudioCode\\Python\\winLine"%open("C:/ProgramData/PsychonDevStudios/userKey.txt", "r").read() or sys.path[0] == "w:\\":
                         print(DEV_COMPONENT + KEY_DEVMODE + RESET)
                     else:
                         print(SPECIALDRIVE + KEY_DISTMODE + RESET)
                 except:
                     print(SPECIALDRIVE + KEY_DISTMODE + RESET)
+
+                if (USE_SAFE_MODE in config):
+                    print(YELLOW + "WL Safe Mode" + RESET)
                 print("")
 
             elif command == "path":
@@ -1308,6 +1355,129 @@ def main():
                     print(YELLOW + "Updating configuration...")
                     os.remove(DATAPATH + "/config")
                     doConfig()
+
+            elif command == "uninstall":
+                print(YELLOW + "\nWinLine Uninstaller")
+                print(YELLOW + "Please select an option:")
+                print(RED + "1. Uninstall and erase data\n2. Uninstall and keep data\n3. Cancel"+RESET)
+                
+                selectActive = True
+                while selectActive:
+                    option = input(BLUE + "Enter choice > " + RESET)
+                    selectActive = False
+
+                if option == "1":
+                    print(YELLOW + "Fully uninstalling and purging data..." + RESET)
+                    try:
+                        shutil.rmtree(DATAPATH)
+                        print(RED + "WinLine has been fully uninstalled. Exiting..." + RESET)
+                        os.abort()
+                    except Exception as err:
+                        print(RED + "WARNING: Uninstallation failed! Error: " + str(err) + RESET)
+
+                elif option == "2":
+                    print(YELLOW + "Removing core files..." + RESET)
+                    os.remove(DATAPATH + "/terminal.py")
+                    os.remove(DATAPATH + "/utilities.py")
+                    shutil.rmtree(DATAPATH + "__pycache__", ignore_errors=True)
+
+                else:
+                    print(YELLOW + "Cancelled" + RESET)
+
+            elif command == "recovery" or command == "restore":
+                # print(YELLOW + "Entering recovery mode...")
+                import tkinter.filedialog as getFile, tkinter
+                root = tkinter.Tk()
+                root.wm_geometry("1x1")
+                root.grid_anchor("center")
+                root.wm_title("")
+                # root.iconify()
+
+                fileToUpload = getFile.askopenfilename(title="Select Recovery Package", filetypes=[("Recovery Package", ("*.wlc"))])
+
+                root.destroy()
+
+                if (fileToUpload != "" and fileToUpload != None):select_valid = True
+                else:select_valid = False
+
+                if select_valid:
+                    stage_path = DRIVELETTER + ":/ProgramData/wlstage"
+                    print(YELLOW + "Staging..." + RESET)
+                    if not os.path.isdir(stage_path):
+                        os.mkdir(stage_path)
+                    else:
+                        shutil.rmtree(stage_path)
+                        os.mkdir(stage_path)
+
+                    with ZipFile(fileToUpload) as data:
+                        print(YELLOW + "Extracting recovery contents..." + RESET)
+                        data.extractall(stage_path)
+                        data.close()
+                    
+                    try:
+                        pv = open(stage_path + "/package_version", "r").read()
+
+                        if (Appversion != pv):
+                            print(YELLOW + "Caution: This backup was created on a different version of WinLine. Restoring from this backup might break some features." + RESET)
+                            dob = input(BLUE + "Are you sure you want to continue? [Y/N] > ").capitalize()
+                    except:NotImplemented
+
+
+                    if dob == "Y":
+                        print(YELLOW + "Restoring contents..." + RESET)
+                        for file in os.listdir(stage_path):
+                            print(DRIVES + "Checking " + file + RESET)
+
+                            if os.path.isfile(stage_path + "/" + file):
+                                print(DRIVES + "Name: " + file + BLUE + " Type: file" + RESET)
+                                if os.path.isfile(DATAPATH + "/" + file):
+                                    os.remove(DATAPATH + "/" + file)
+                                print(YELLOW + "Copying " + file + RESET)
+                                shutil.copy(stage_path + "/" + file, DATAPATH + "/" + file)
+
+                            elif os.path.isdir(stage_path + "/" + file):
+                                print(DRIVES + "Name: " + file + MAGENTA + " Type: directory" + RESET)
+                                if os.path.isdir(DATAPATH + "/" + file):
+                                    shutil.rmtree(DATAPATH + "/" + file)
+                                
+                                shutil.copytree(stage_path + "/" + file, DATAPATH + "/" + file)
+
+                        shutil.rmtree(stage_path)
+
+                        print(SPECIALDRIVE + "Recovery finished" + RESET)
+
+            elif command == "backup":
+                print(YELLOW + "Please wait, collecting files..." + RESET)
+                backup = ZipFile(DATAPATH + '/winline_backup.wlc', 'w')
+
+                try:
+                    file = open(DATAPATH + "/package_version", "x")
+                    file.write(Appversion)
+                    file.close()
+                except:
+                    file = open(DATAPATH + "/package_version", "w")
+                    file.write(Appversion)
+                    file.close()
+
+                try:backup.write(DATAPATH + "/owner_name", "owner_name")
+                except:NotImplemented
+                try:backup.write(DATAPATH + "/config", "config")
+                except:NotImplemented
+                try:backup.write(DATAPATH + "/development_components.txt", "development_components.txt")
+                except:NotImplemented
+                try:backup.write(DATAPATH + "/package_version", "/package_version")
+                except:NotImplemented
+
+                backup.close()
+
+                try:os.rename(DATAPATH + "/backup.zip", DATAPATH + "/backup.wlc")
+                except:NotImplemented # Fail silently
+
+                print(YELLOW + "Backup created! Copying to desktop...")
+                shutil.copy(DATAPATH + "/winline_backup.wlc", DRIVELETTER + ":/Users/%s/Desktop/winline_backup.wlc"%os.getlogin())
+
+                os.remove(DATAPATH + '/winline_backup.wlc')
+                print(SPECIALDRIVE + "Backup complete!" + RESET)
 
             else:
                 if not (NON_WIN):
@@ -1341,11 +1511,15 @@ def main():
                     sys.stdout.write(u"\x1b[1A" + u"\x1b[2K" + "\r" + locprefix + location + "> " + "\u001b[1;41m" + command + RESET + "\n")
                     print(RED + "Unrecognized command\n" + RESET)
                 else:
-                    try:
-                        # print(BLUE + "System: " + RESET)
-                        subprocess.run(command)
-                    except Exception as err:
-                        print(RED + "Failed to run command: Not internal command and OS reported " + str(err) + RESET + "\n")
+                    if not (USE_SAFE_MODE in config):
+                        try:
+                            # print(BLUE + "System: " + RESET)
+                            subprocess.run(command)
+                        except Exception as err:
+                            print(RED + "Failed to run command: Not internal command and OS reported " + str(err) + RESET + "\n")
+                    
+                    else:
+                        print(RED + "Failed to run command: Not internal command and safe mode is active" + RESET + "\n")
  
 
         except KeyboardInterrupt:
@@ -1369,13 +1543,14 @@ if (ADVANCEDMODE in config) and not ISDEV:
 elif ISDEV:
     print(DEV_COMPONENT + "Developer mode is enabled\n" + RESET)
 
-if ENABLE_AV_CHECK in config:
-    if not THREADED_AV_CHECK in config:
-        checkForDangerousComponents()
+if not (USE_SAFE_MODE in config):
+    if ENABLE_AV_CHECK in config:
+        if not THREADED_AV_CHECK in config:
+            checkForDangerousComponents()
+        else:
+            td(target=checkForDangerousComponents, name="A/V check thread").start()
     else:
-        td(target=checkForDangerousComponents, name="A/V check thread").start()
-else:
-    print(DRIVES + "Warning: malware detection has been disabled from the config file. WinLine will not check for malicious components!" + RESET)
+        print(DRIVES + "Warning: malware detection has been disabled from the config file. WinLine will not check for malicious components!" + RESET)
 
 print("")
 

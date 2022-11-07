@@ -9,13 +9,14 @@ PATH = sys.path[0]
 DoNotInstallWinLine = False
 readme = """By clicking "install", you grant us permission to:
 - Create and edit folders on your device
-- Create, edit, and delete game files on your device
-- Install additional required software
+- Create, edit, and delete (WinLine's) files on your device
+- Install additional required software (through Python's PIP)
 - Create a shortcut on your desktop
 
 If you do not wish to grant us these permissions, please close the installer."""
 installable = []
 installed = []
+core_only = False
 
 if os.path.isfile(PATH + "/winline.dat"):installable.append("WinLine")
 
@@ -79,7 +80,7 @@ def installWinLine():
     print(YELLOW + "Step 2\nCreating directories")
     time.sleep(0.3)
     try:os.mkdir(WINDRIVE + ":/ProgramData/winLine")
-    except:print(RED + "Warning: directory already exists. The current installation will be overwritten.\n")
+    except:print(RED + "Warning: directory already exists. Only unpacking core files\n");core_only = True
     try:os.mkdir(WINDRIVE + ":/ProgramData/winLine/man")
     except:NotImplemented
     try:os.mkdir(WINDRIVE + ":/ProgramData/winLine/components")
@@ -90,8 +91,12 @@ def installWinLine():
     print(YELLOW + "Step 3\nUnpacking winLine")
     try:
         with ZipFile(sys.path[0] + "/winline.dat") as data:
-            data.extractall(WINDRIVE + ":/ProgramData/winLine")
-            data.close()
+            if not core_only:
+                data.extractall(WINDRIVE + ":/ProgramData/winLine")
+                data.close()
+            else:
+                data.extract("terminal.py", WINDRIVE + ":/ProgramData/winLine")
+                data.extract("utilities.py", WINDRIVE + ":/ProgramData/winLine")
 
     except:
         print(RED + "\nError: winline.dat could not be opened. The file may be corrupted.")
@@ -104,11 +109,12 @@ def installWinLine():
             data.extractall(WINDRIVE + ":/ProgramData/winLine/man")
             data.close()
     except Exception as err:NotImplemented
-    try:
-        with ZipFile(sys.path[0] + "/winline_components.dat") as data:
-            data.extractall(WINDRIVE + ":/ProgramData/winLine/components")
-            data.close()
-    except Exception as err:NotImplemented
+    if not os.path.isdir(WINDRIVE + ":/ProgramData/winLine/components"):
+        try:
+            with ZipFile(sys.path[0] + "/winline_components.dat") as data:
+                data.extractall(WINDRIVE + ":/ProgramData/winLine/components")
+                data.close()
+        except Exception as err:NotImplemented
         
     time.sleep(1.5)
 
@@ -136,9 +142,9 @@ def installWinLine():
     root.wm_title("WinLine - Installer")
     RENDER()
 
-if ("Project" in sys.path[0] or "VisualStudioCode" in sys.path[0]):
-    print(RED + "abort" + NORMAL)
-    os.abort()
+# if ("Project" in sys.path[0] or "VisualStudioCode" in sys.path[0]):
+#     print(RED + "abort" + NORMAL)
+#     os.abort()
 
 if not os.path.isfile(sys.path[0] + "/winline.dat"):
     DoNotInstallCXR = True
@@ -148,12 +154,12 @@ print("\n")
 root = tk.Tk()
 root.wm_geometry("600x200")
 root.grid_anchor("center")
-root.wm_title("Shoutout - Installer")
+root.wm_title("WinLine - Installer")
 root.wm_resizable(width=False, height=False)
 root.config(background="lightgray")
 
 if not ("nt" in os.name):
-    messagebox.showinfo("CXR Installer", "Shoutout is only properly supported on Windows")
+    messagebox.showinfo("WinLine Installer", "WinLine is only properly supported on Windows")
     root.wm_title("Exiting...")
     os.abort()
 
