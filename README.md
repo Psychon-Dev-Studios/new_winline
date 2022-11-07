@@ -22,7 +22,8 @@ The terminal emulates a lxterm-like environment, sutable for users familiar with
 
 ## MINIMUM REQUIREMENTS:
 * Python 3.x
-* 100 KB free space
+* 100 KB free space for core files
+* 10 KB free space for documentation
 * Windows 10 / Windows 11 / Linux
 
 ## RECOMMENDED:
