@@ -1,14 +1,19 @@
-VERSION_ID = "3.4"
+VERSION_ID = "3.6"
 PATCH_ID = 0
+SVRMODE = 0 # Set to 1 to switch to a locally-served server on port 80
 
 KEY_DEVMODE = "DEVELOPER.UNSTABLE.%s"%VERSION_ID
 KEY_BETA = "GIT_BETA"
 KEY_DISTMODE = "GIT_STABLE"
 
-REMOTE_SERVER = "https://psychon-dev-studios.github.io/nwl_stirehost"
+if SVRMODE == 0:
+    REMOTE_SERVER = "https://psychon-dev-studios.github.io/nwl_stirehost"
+else:
+    REMOTE_SERVER = "http://localhost:80"
 
 try:
     import os, sys, shutil, socket, subprocess, time, json
+    from io import BytesIO
     from zipfile import ZipFile
     from urllib import request as urlRequest
     from threading import Thread as td
@@ -1212,15 +1217,20 @@ def main():
                             if not (NON_WIN):
                                 print(YELLOW + "The following components are currently installed:" + RESET)
                                 dev_components = []
+                                disabled = []
+                                for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/disabled/"):
+                                    disabled.append(component.split(".", maxsplit=1)[0])
+                                # print(loaded_components)
+                                # print(disabled)
                                 for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/"):
                                     # if ".py" in component:
-                                        # print(loaded_components)
                                         load_string = ""
                                         ignore_load_status = open(DATAPATH + "/development_components.txt").read()
 
                                         if not (component.split(".", 1)[0] in ignore_load_status) and os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component):
                                             if component.split(".", 1)[0] in found_dangerous:load_string="(DANGEROUS)";colorToUse=RED
                                             elif(component.split(".", 1)[0] in loaded_components and component.split(".", 1)[0] in enabled_components):load_string=SPECIALDRIVE+"(loaded)";colorToUse=BLUE
+                                            elif(component.split(".", 1)[0] in disabled):load_string=RED + "(disabled)";colorToUse=DRIVES
                                             elif(component.split(".", 1)[0] in enabled_components):load_string="(unloaded)";colorToUse=DRIVES
                                             elif not (ALLOW_COMPONENTS in config):load_string=(RED + "(blacklisted)" + RESET);colorToUse=RED
                                             elif not (os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component)):load_string=RED+"(unsupported format)";colorToUse=DRIVES
@@ -1233,6 +1243,7 @@ def main():
 
                                 for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/unloaded"):
                                     if component in found_dangerous:load_string="(DANGEROUS)";colorToUse=RED
+                                    elif(component.split(".", 1)[0] in disabled):load_string=RED + "(disabled)";colorToUse=DRIVES
                                     else:load_string="(unloaded)";colorToUse=DRIVES
                                     print(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
 
@@ -1246,6 +1257,7 @@ def main():
                                 for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/disabled"):
                                     if component in found_dangerous:
                                         load_string="(DANGEROUS)";colorToUse=RED
+                                    elif(component.split(".", 1)[0] in disabled):load_string=RED + "(disabled)";colorToUse=DRIVES
                                     else:load_string="(unloaded)";colorToUse=DRIVES
                                     print(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
                         
@@ -1478,6 +1490,96 @@ def main():
 
                 os.remove(DATAPATH + '/winline_backup.wlc')
                 print(SPECIALDRIVE + "Backup complete!" + RESET)
+
+            elif command == "update":
+                print(YELLOW + "Contacting server and checking for updates..." + RESET)
+                keepTrying = True
+                failed = 0
+                okay = True
+                while keepTrying == True:
+                    try:
+                        server_version = str(urlRequest.urlopen(REMOTE_SERVER  + "/latest_version").read(), "'UTF-8'")
+                        # print(BLUE + "Current version: %s"%VERSION_ID + RESET)
+                        # print(YELLOW + "Latest version: %s"%server_version + RESET)
+                        keepTrying = False
+                    except:
+                        failed += 1
+                        time.sleep(1)
+
+                        if failed > 3:
+                            keepTrying = False
+                            okay = False
+
+                if okay:
+                    if (server_version != VERSION_ID):
+                        print(YELLOW + "You are currently using WinLine " + MAGENTA + VERSION_ID + YELLOW + ", and version " + MAGENTA + server_version + YELLOW + " is available" + RESET)
+                        cinst = input(BLUE + "Do you want to continue? [Y/N] > " + RESET).capitalize()
+
+                        if cinst == "Y":
+                            print(YELLOW + "\nDownloading update..." + RESET)
+                            try:
+                                os.mkdir(DRIVELETTER + ":/ProgramData/wlstage")
+                            except:
+                                shutil.rmtree(DRIVELETTER + ":/ProgramData/wlstage")
+                                os.mkdir(DRIVELETTER + ":/ProgramData/wlstage")
+                            everythingIsOkay = True
+                            keepTrying = True
+                            failed = 0
+
+                            try:
+                                with urlRequest.urlopen(REMOTE_SERVER  + "/winline.dat") as remote_archive:
+                                    with ZipFile(BytesIO(remote_archive.read())) as update_package:
+                                        update_package.extractall(DRIVELETTER + ":/ProgramData/wlstage")
+                                keepTrying = False
+                            except Exception as err:
+                                failed += 1
+
+                                if failed > 5:
+                                    everythingIsOkay = False
+                                    reason = str(err)
+                                    keepTrying = False
+
+                            if everythingIsOkay:
+                                print(YELLOW + "Updating core files..." + RESET)
+                                try:
+                                    shutil.copy(DRIVELETTER + ":/ProgramData/wlstage/terminal.py", DRIVELETTER + ":/ProgramData/winLine/terminal.py")
+                                    shutil.copy(DRIVELETTER + ":/ProgramData/wlstage/utilities.py", DRIVELETTER + ":/ProgramData/winLine/utilities.py")
+                                    print(SPECIALDRIVE + "Update complete! Please restart WinLine to use the new version" + RESET)
+                                except:
+                                    print(RED + "Core files could not be updated" + RESET)
+
+                                shutil.rmtree(DRIVELETTER + ":/ProgramData/wlstage", True)
+
+                                # update_docs = input(BLUE + "Do you want to update the local documentation files? [Y/N] > ").capitalize()
+
+                                # if update_docs == "Y":
+                                #     print(YELLOW + "Downloading documentation..." + RESET)
+                                #     keepTrying = True
+                                #     failed = 0
+                                #     good = True
+                                #     try:
+                                #         with urlRequest.urlopen(REMOTE_SERVER  + "/winline.dat") as remote_archive:
+                                #             with ZipFile(BytesIO(remote_archive.read())) as update_package:
+                                #                 update_package.extractall(DRIVELETTER + ":/ProgramData/wlstage")
+                                #         keepTrying = False
+                                #     except:
+                                #         failed += 1
+                                #         if failed > 5:
+                                #             keepTrying = False
+                                #             good = False
+
+                                #     if good:
+                                #         print(YELLOW + "Updating documentation..." + RESET)
+                                #     else:
+                                #         print(RED + "Failed to download documentation" + RESET)
+                            else:
+                                print(RED + "Update failed: " + reason + RESET)
+                    
+                else:
+                    print(RED + "Unable to connect to server" + RESET)
+
+                print("")
+                shutil.rmtree(DRIVELETTER + ":/ProgramData/wlstage", True)
 
             else:
                 if not (NON_WIN):
