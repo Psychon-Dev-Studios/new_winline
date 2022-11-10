@@ -29,3 +29,6 @@ The terminal emulates a lxterm-like environment, sutable for users familiar with
 ## RECOMMENDED:
 * Python 3.8
 * 500 KB free space (to allow for components)
+
+## ADDITIONAL RESOURCES:
+* Components & Discussions: https://github.com/Psychon-Dev-Studios/new_winline/discussions
