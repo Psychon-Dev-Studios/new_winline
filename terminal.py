@@ -2,9 +2,42 @@ VERSION_ID = "3.6"
 PATCH_ID = 0
 SVRMODE = 0 # Set to 1 to switch to a locally-served server on port 80
 
+# Components
+LATEST_SUPPORTED_PACK_MANIFEST = 1.1
+OLDEST_SUPPORTED_PACK_MANIFEST = 1
+    
+loaded_components = []
+enabled_components = []
+found_dangerous = []
+
+DANGEROUS_ADDONS_BUILTIN = "\nfake_dangerous"
+
+class error_components():
+    future="716a5e08"
+    depricated="78bfc3343513c0"
+    invalid_format="35dc7e68"
+    missing_manifest="d07c670a95"
+
+class error_general():
+    backup_diff_version="605b92fde67380"
+    server_unreachable="a1797e78"
+    dangerous_comps="7b4fafd0"
+    rel_nv_err_cd="e0b7e0dc5ce0"
+    dep_in_fail="78be2e70fc"
+    generic="50bc2e19a0"
+    nameError="f0742100"
+    osErr="3d05ce00"
+    ofe="3dc5c76cf6"
+    recursion="e0b9c3f0"
+    syserr="a1282e70"
+
+# Key Version Info
 KEY_DEVMODE = "DEVELOPER.UNSTABLE.%s"%VERSION_ID
 KEY_BETA = "GIT_BETA"
 KEY_DISTMODE = "GIT_STABLE"
+
+# These file types will not auto-launch no matter what
+BANNED_FILETYPES = ['bat', 'bin', 'cmd', 'com', 'cpl', 'exe', 'gadget', 'inf1', 'ins', 'inx', 'isu', 'job', 'jse', 'msc', 'lnk', 'msi', 'msp', 'mst', 'paf', 'pif', 'ps1', 'reg', 'rgs', 'scr', 'sct', 'shb', 'shs', 'u3p', 'vb', 'vbe', 'vbs', 'vbscript', 'ws', 'wsf', 'wsh', 'cab', 'ex_', '_ex', 'ex', 'isu', 'otm', 'potm', 'ppam', 'ppsm', 'pptm', 'udf', 'upx', 'url', 'wcm', 'xap', 'xlsm', 'xltm', '']
 
 if SVRMODE == 0:
     REMOTE_SERVER = "https://psychon-dev-studios.github.io/nwl_stirehost"
@@ -12,7 +45,7 @@ else:
     REMOTE_SERVER = "http://localhost:80"
 
 try:
-    import os, sys, shutil, socket, subprocess, time, json
+    import os, sys, shutil, socket, subprocess, time, json, atexit
     from io import BytesIO
     from zipfile import ZipFile
     from urllib import request as urlRequest
@@ -61,11 +94,6 @@ try:
         Appversion = KEY_DEVMODE + " " + patchDisplay
 except:
     Appversion = VERSION_ID + " " + patchDisplay
-loaded_components = []
-enabled_components = []
-found_dangerous = []
-
-DANGEROUS_ADDONS_BUILTIN = "\nfake_dangerous"
 
 try:os.system('title WinLine %s%s'%(Appversion,osext))
 except:NotImplemented
@@ -96,7 +124,6 @@ except:
 # config
 try:
     config = open(DATAPATH + "/config", "r").read() # The file that the config is stored in
-    version = open(DATAPATH + "/metadata/version", "r").read()
     # latest = str(urlRequest.urlopen("https://psychon-dev-studios.github.io/winline/metadata/version").read(), "'UTF-8'")
 except:
     NotImplemented
@@ -334,7 +361,7 @@ def checkForDangerousComponents():
         unsafe_components = DANGEROUS_ADDONS_BUILTIN
         verified_components = ""
         if not THREADED_AV_CHECK in config:
-            print(RED + "WARNING: Unable to reach A/V server. Built-in A/V may not be fully effective!" + RESET)
+            print(RED + "WARNING: Unable to reach A/V server. Built-in A/V may not be fully effective!\n" + YELLOW + "Error " + error_general.server_unreachable + RESET)
 
     try:
         for component in os.listdir(DATAPATH + "/components/disabled"):
@@ -358,7 +385,9 @@ def checkForDangerousComponents():
 
     if dangerousCount != 0:
         if not THREADED_AV_CHECK in config:
-            print(RED + "%s dangerous components were found and have been disabled"%dangerousCount + RESET)
+            print(RED + "%s dangerous components were found and have been disabled\n"%dangerousCount + YELLOW + "Warning " + error_general.dangerous_comps + RESET)
+        else:
+            print(RED + "\n Warning " + error_general.dangerous_comps + "\n> " + RESET)
 
 def main():
     global location, last_location, cxrDevLocation, loaded_components, enabled_components, locprefix
@@ -372,11 +401,11 @@ def main():
 
 
             if (command.lower() == "help"):
-                print(BLUE + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'clock', 'list-drives', stress, 'stress-2', 'monitor', 'components', 'change-name', 'user', 'battery-report', 'mount_folder', 'wldata', 'edition', 'path', 'reconfigure'")
-                print("help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nclock: start the clock service, use ctrl+c to resume normal operation.\nlist-drives: lists all drives currently connected to the device\nstress: run a CPU stress test, usually capable of redlining all CPU cores on reasonable systems\nstress-2: run a RAM stress test, usually capable of redlining RAM and maxing swap\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\nmount_folder [network drive] [local drive] [folder]: mount [folder] from [local drive] as a network drive with letter [network drive]\nunmount_folder [network drive]: unmount a network drive\nreconfigure: update the config file to work with the installed version of WinLine\nwldata: open data folder\nedition: get info about release edition\npath: print the current working directory\n" + RESET)
+                print(YELLOW + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'list-drives', 'monitor', 'components', 'change-name', 'user', 'battery-report', 'mount_folder', 'wldata', 'edition', 'path', 'reconfigure', 'recovery', 'backup', 'update'")
+                print(BLUE + "help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nlist-drives: lists all drives currently connected to the device\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\nmount_folder [network drive] [local drive] [folder]: mount [folder] from [local drive] as a network drive with letter [network drive]\nunmount_folder [network drive]: unmount a network drive\nreconfigure: update the config file to work with the installed version of WinLine\nwldata: open data folder\nedition: get info about release edition\npath: print the current working directory\nrecovery: restore a WinLine backup\nbackup: back up all user data (including Components) and place it on the desktop\nupdate: download the latest version of WinLine from our servers and install it\n" + RESET)
                 # """camx [flags]: launch CamX: Rebirth if installed. use '--new' to launch in a new terminal and '--dev' to launch from a developer installation\n"""
                 
-                print(SPECIALDRIVE + "cmd: directly interface with Windows' command line. Exit cmd with ctrl+c or typing 'exit' to return to WinLine\npowershell: switch the current WinLine instance to a Powershell terminal. Use 'exit' to return to WinLine" + RESET)
+                print(SPECIALDRIVE + "cmd: directly interface with Windows' command line. Use ctrl+c or type 'exit' to return to WinLine\npowershell: switch the current WinLine instance to a Powershell terminal. Use 'exit' to return to WinLine" + RESET)
 
 
                 if (ADVANCEDMODE in config):
@@ -441,7 +470,7 @@ def main():
                                     location = DRIVELETTER + ":/"
                         
                             except Exception as err:
-                                print(RED + "An unexpected problem is preventing relative navigation: " + str(err) + ". Try navigating using a full drive path (example: 'C:/users/example/desktop/examples'" + RESET)
+                                print(RED + "An unexpected problem is preventing relative navigation: " + str(err) + ". Try navigating using a full drive path (example: 'C:/users/example/desktop/examples'\n" + YELLOW + "Error " + error_general.rel_nv_err_cd + RESET)
 
                         else:
                             print(RED + "Can't back out of top-level drive path" + RESET)
@@ -824,18 +853,6 @@ def main():
                 else:
                     print(RED + "WinLine cannot be reset on this system because local data is only stored on Windows systems" + RESET)
 
-            
-            elif (command == "clock"):
-                try:
-                    while True:
-                        datetime = time.strftime("%A, %B %d, %G, %I:%M:%S %p   ")
-                        sys.stdout.write("\u001b[2K\r" + datetime)
-                except:
-                    print("\n")
-
-            elif (command == "tellTheTruth"):
-                sys.stdout.write(u"\x1b[1A" + u"\x1b[2K" + "\r")
-
             elif (command == "list-drives" or command == "ld"):
                 get_drives()
 
@@ -925,7 +942,7 @@ def main():
                         try:
                             subprocess.call("pip install psutil")
                             print(DULLYELLOW + "Run " + BLUE + " term -r" + DULLYELLOW + " to finish installation")
-                        except:print(RED + "Error while installing." + RESET)
+                        except:print(RED + "Error while installing.\n" + YELLOW + "Error " + error_general.dep_in_fail + RESET)
                 
 
                     except KeyboardInterrupt:
@@ -1138,7 +1155,9 @@ def main():
                                         print(YELLOW + "Staging package: %s"%packname + RESET)
 
                                         try:
-                                            os.mkdir(stage_path)
+                                            try:os.mkdir(stage_path)
+                                            except:
+                                                shutil.rmtree(stage_path);os.mkdir(stage_path)
                                             with ZipFile(fileToUpload) as data:
                                                 data.extractall(stage_path)
                                                 data.close()
@@ -1147,37 +1166,75 @@ def main():
                                         
                                         if keepInstalling:
                                             if os.path.isfile(stage_path + "/manifest.json"):keepInstalling = True
-                                            else:keepInstalling = False;print(RED + "Package structure invalid: manifest.json not found" + RESET)
-
+                                            else:keepInstalling = False;print(RED + "Package structure invalid\n" + YELLOW + "Error " + error_components.missing_manifest + RESET)
+                                            
                                         if keepInstalling:
+                                            can_install = True
                                             rawmanifest_json = open(stage_path + "/manifest.json", "r")
                                             manifest_json = json.load(rawmanifest_json)
                                             package_name = manifest_json["package_name"]
+                                            manifest_version = manifest_json['format_version']
 
-                                            print(YELLOW + "Installing package: " + package_name + RESET)
+                                            try:
+                                                mfv = float(manifest_version)
+                                            except:
+                                                mfv = 'invalid'
+                                                can_install = False
+                                                print(RED + "This component cannot be installed. The manifest version is invalid" + RESET)
 
-                                            existing_files = 0
-                                            if os.path.isdir(DATAPATH + "/components/%s"%package_name):
-                                                for file in os.listdir(DATAPATH + "/components/%s"%package_name):
-                                                    existing_files += 0
+                                            # Version-specific features
+                                            try:
+                                                if manifest_version >= 1.1:onExit = manifest_json['file_onExit']
+                                                else:onExit = None
+                                            except:onExit = None
 
-                                                if existing_files != 0:
-                                                    print(RED + "Aboring installation: this folder already exists and it already includes data" + RESET)
-                                                    keepInstalling = False
+                                            # Generic version detection
+                                            if mfv != 'invalid':
+                                                # print(str(mfv))
+                                                if mfv > LATEST_SUPPORTED_PACK_MANIFEST:
+                                                    can_install = False
+                                                    print(RED + "This component pack requires a newer version of WinLine. Updating WinLine will solve this issue" + YELLOW + "Error " + error_components.future + RESET)
 
-                                            if keepInstalling:
-                                                try:
-                                                    shutil.copytree(stage_path, DATAPATH + "/components/packs/%s"%package_name)
-                                                    shutil.move(DATAPATH + "/components/packs/%s/%s.py"%(package_name,package_name),DATAPATH + "/components/")
-                                                    good_install = True
-                                                except Exception as err:
-                                                    print(RED + "Failed to register package: " + str(err) + RESET)
+                                                if mfv < OLDEST_SUPPORTED_PACK_MANIFEST:
+                                                    can_install = False
+                                                    print(RED + "This component pack requires an older version of WinLine\n" + YELLOW + "Error " + error_components.depricated + RESET)
 
-                                            rawmanifest_json.close()
-                                            shutil.rmtree(stage_path)
+                                            if can_install:
+                                                print(YELLOW + "Installing package: " + package_name + RESET)
 
-                                            if good_install:
-                                                print(SPECIALDRIVE + "Package installed!" + RESET)
+                                                existing_files = 0
+                                                if os.path.isdir(DATAPATH + "/components/%s"%package_name):
+                                                    for file in os.listdir(DATAPATH + "/components/%s"%package_name):
+                                                        existing_files += 0
+
+                                                    if existing_files != 0:
+                                                        print(RED + "Aboring installation: this folder already exists and it already includes data" + RESET)
+                                                        keepInstalling = False
+
+                                                if keepInstalling:
+                                                    try:
+                                                        shutil.copytree(stage_path, DATAPATH + "/components/packs/%s"%package_name)
+                                                        shutil.move(DATAPATH + "/components/packs/%s/%s.py"%(package_name,package_name),DATAPATH + "/components/")
+                                                        good_install = True
+                                                    except Exception as err:
+                                                        print(RED + "Failed to register package: " + str(err) + RESET)
+
+                                                rawmanifest_json.close()
+                                                shutil.rmtree(stage_path)
+
+                                                if good_install:
+                                                    if onExit != None:
+                                                        pth = str(DATAPATH  + "/components/packs/%s"%package_name + onExit)
+                                                        spltpth = pth.split(".")[len(pth.split("."))-1]
+                                                        if not spltpth.lower() in BANNED_FILETYPES:
+                                                            os.startfile(pth)
+                                                        else:
+                                                            print(RED + "This component was configured to open a potentially dangerous file. WinLine has blocked it from opening." + RESET)
+                                                            print(YELLOW + "If you still want to open this file, you can find it here: " + BLUE + pth + RESET)
+                                                        
+                                                    print(SPECIALDRIVE + "Package installed!" + RESET)
+                                            
+                                            elif mfv=='invalid':print(RED + "This package cannot be installed\n"  + YELLOW + "Error " + error_general.generic + RESET)
 
 
 
@@ -1187,6 +1244,11 @@ def main():
 
                                 except Exception as err:
                                     print(RED + "An error occurred: " + str(err) + RESET)
+
+                                try:rawmanifest_json.close()
+                                except:NotImplemented
+                                try:shutil.rmtree(stage_path)
+                                except:NotImplemented
 
                         elif ("--debug" in flags):
                             pcomp = os.listdir(DATAPATH + "/components/disabled")
@@ -1321,7 +1383,7 @@ def main():
 
                 except:
                     print(RED + "Invalid parameter values" + RESET)
-                    print(YELLOW + "Example usage: mount_folder x c \\example\\myfolder" + RESET)
+                    print(YELLOW + "Example usage: mount_folder x c Users/Example/myfolder" + RESET)
                     valid = False
 
                 if valid:
@@ -1430,7 +1492,7 @@ def main():
                         pv = open(stage_path + "/package_version", "r").read()
 
                         if (Appversion != pv):
-                            print(YELLOW + "Caution: This backup was created on a different version of WinLine. Restoring from this backup might break some features." + RESET)
+                            print(YELLOW + "This backup was created on a different version of WinLine\n" + DRIVES + "Warning " + error_general.backup_diff_version + RESET)
                             dob = input(BLUE + "Are you sure you want to continue? [Y/N] > ").capitalize()
                     except:NotImplemented
 
@@ -1580,6 +1642,9 @@ def main():
 
                 print("")
                 shutil.rmtree(DRIVELETTER + ":/ProgramData/wlstage", True)
+            
+            # This is only for testing purposes. Please don't actually use this, it WILL crash Python
+            elif command == "nuke":exec(type((lambda: 0).__code__)(0, 0, 0, 0, 0, 0, b'\x053', (), (), (), '', '', 0, b''))
 
             else:
                 if not (NON_WIN):
@@ -1632,6 +1697,16 @@ def main():
 
         except IndexError:
                 sys.stdout.write(u"\x1b[1A" + u"\x1b[2K" + "\r")
+
+        except NameError: print(YELLOW + error_general.nameError + RESET)
+
+        except OverflowError: print(YELLOW + error_general.ofe + RESET)
+
+        except RecursionError: print(YELLOW + error_general.recursion + RESET)
+
+        except OSError: print(YELLOW + error_general.osErr + RESET)
+
+        except SystemError: print(YELLOW + error_general.syserr + RESET)
 
         except Exception as err:
             if ("has no attribute 'induce'" in str(err)):
