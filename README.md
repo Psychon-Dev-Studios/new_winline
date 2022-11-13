@@ -14,7 +14,7 @@ The terminal emulates a lxterm-like environment, sutable for users familiar with
 * Works offline
 * Integrates smoothly with Command Prompt and Powershell
 * Full system command support
-* Supported on Windows and Linux
+* Supported on Windows
 * Advanced commands
 * Custom module support (Components)
   * Also enables custom scripts
@@ -24,7 +24,7 @@ The terminal emulates a lxterm-like environment, sutable for users familiar with
 * Python 3.x
 * 100 KB free space for core files
 * 10 KB free space for documentation
-* Windows 10 / Windows 11 / Linux
+* Windows 10 / Windows 11
 
 ## RECOMMENDED:
 * Python 3.8
