@@ -1,7 +1,7 @@
-## For those curious, the main function starts waaaaay down near line 400 (might be further or closer, who knows. We modify the start of this file a LOT)
+## For those curious, the main function starts waaaaay down near line 430 (might be further or closer, who knows. We modify the start of this file a LOT)
 
-VERSION_ID = "3.7" # Current WinLine version. Should be in format MAJOR.MINOR
-PATCH_ID = 0 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
+VERSION_ID = "3.9" # Current WinLine version. Should be in format MAJOR.MINOR
+PATCH_ID = 7 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
 SVRMODE = 0 # Set to 1 to switch to a locally-served server on port 80
 
 # Components
@@ -38,7 +38,8 @@ class error_general():
 # End error codes
 
 # Key Version Info
-KEY_DEVMODE = "DEVELOPER.UNSTABLE.%s"%VERSION_ID
+VALID_CHANNELS = ["stable", "beta"]
+KEY_DEVMODE = "UNSTABLE %s"%VERSION_ID
 KEY_BETA = "GIT_BETA"
 KEY_DISTMODE = "GIT_STABLE"
 
@@ -65,7 +66,7 @@ try:
     try:
         import utilities
     except:
-        print("Warning: utility pack failed to import. Certain commands will not work correctly")
+        print("Warning: utility package failed to import. The 'monitor' command will not work")
         time.sleep(5)
 
 # Something failed, import the bare essentials and warn the user about the error
@@ -88,11 +89,11 @@ try:
 except:osext=""
 
 # This is the variable used to display the current version
-patchDisplay = "[Patch %s]"%PATCH_ID if PATCH_ID > 0 else  ""
+patchDisplay = "%s"%("." + str(PATCH_ID) if PATCH_ID > 0 else  "")
 
 # Try to figure out if this version is a developer version
 try:
-    if (sys.path[0] == "c:\\Users\\%s\\Downloads\\VisualStudioCode\\Python\\winLine"%open("C:/ProgramData/PsychonDevStudios/userKey.txt", "r").read() or sys.path[0] == "W:\\"):
+    if (sys.path[0] == "c:\\Users\\%s\\Downloads\\VisualStudioCode\\Python\\winLine"%(open("C:/ProgramData/PsychonDevStudios/userKey.txt", "r").read()) or sys.path[0] == "W:\\"or sys.path[0] == "w:\\"):
         ISDEV = True
     else:
         ISDEV = False
@@ -100,11 +101,11 @@ except:ISDEV = False
 
 try:
     if not (ISDEV):
-        Appversion = VERSION_ID + " " + patchDisplay
+        Appversion = VERSION_ID + patchDisplay
     else:
-        Appversion = KEY_DEVMODE + " " + patchDisplay
+        Appversion = KEY_DEVMODE + patchDisplay
 except:
-    Appversion = VERSION_ID + " " + patchDisplay
+    Appversion = VERSION_ID + patchDisplay
 
 # Set the terminal's title
 try:os.system('title WinLine %s%s'%(Appversion,osext))
@@ -114,15 +115,25 @@ except:NotImplemented
 BLUE = "\u001b[38;5;87m"
 DRIVES = "\u001b[1;38;5;202m"
 SPECIALDRIVE = "\u001b[1;38;5;120m"
+SEAFOAM = "\u001b[1;38;5;85m"
 RED = "\u001b[1;31m"
 MAGENTA = "\u001b[1;35m"
-DULLYELLOW = "\u001b[33m"
+DULLYELLOW = "\u001b[1;38;5;142m"
 YELLOW = "\u001b[1;33m"
 RESET = "\u001b[0m"
 
+UNRECOGNIZED_COMMAND = "\u001b[1;41m"
+
 CRITICAL_BATTERY = "\u001b[38;5;160m"
 DEV_COMPONENT = "\u001b[38;5;129m"
+DEV_COLOR = "\u001b[1;38;5;201m"
 # End colors
+
+# Function to test all colors #
+def colorCycle():
+    FULL_COLOR_CYCLE = BLUE + "Blue\n" + DRIVES + "Drives\n" + SPECIALDRIVE + "Windows Drive / Green\n" + SEAFOAM + "Seafoam\n" + RED + "Red / Error\n" + MAGENTA + "Magenta\n" + DULLYELLOW + "Dull Yellow\n" + YELLOW + "Yellow\n" + RESET + "Default\n" + CRITICAL_BATTERY + "Battery Critical\n" + DEV_COMPONENT + "Developer Component\n" + DEV_COLOR + "Developer Info\n" + RESET+UNRECOGNIZED_COMMAND + "Unknown commands\n"
+
+    print(FULL_COLOR_CYCLE+RESET)
 
 # Set DRIVELETTER and DATAPATH if the OS is Windows, blank otherwise
 try:
@@ -131,15 +142,16 @@ try:
         DATAPATH = DRIVELETTER + ":/ProgramData/winLine"
     else:
         DRIVELETTER = ""
-        DATAPATH = ""
+        try:DATAPATH = "/home/%s/.winline"%os.getlogin()
+        except:DATAPATH = ""
 except:
     DRIVELETTER = ""
-    DATAPATH = ""
+    try:DATAPATH = "/home/%s/.winline"%os.getlogin()
+    except:DATAPATH = ""
 
 # config
 try:
     config = open(DATAPATH + "/config", "r").read() # The file that the config is stored in
-    # latest = str(urlRequest.urlopen("https://psychon-dev-studios.github.io/winline/metadata/version").read(), "'UTF-8'")
 except:
     NotImplemented
 
@@ -160,27 +172,27 @@ USE_SAFE_MODE = "safe_mode: true"
 # If on Linux, rename the terminal. This also configures osext
 try:
     if os.name == "nt" and os.path.isfile(DATAPATH + "/config"):
-        if not (EMULATE_LINUX in config):NON_WIN = False;osext=""
-        else:NON_WIN = True;osext=" (Linux Emulation)"
+        if not (EMULATE_LINUX in config):NON_WIN = False;osext="";CLEAR_COMMAND="cls"
+        else:NON_WIN = True;osext=" (Linux Emulation)";CLEAR_COMMAND="clear"
     elif not os.path.isfile(DATAPATH + "/config"):
-        NON_WIN = False;osext=""
+        NON_WIN = False;osext="";CLEAR_COMMAND="clear"
 except:
-    NON_WIN = True;osext=""
+    NON_WIN = True;osext="";CLEAR_COMMAND="clear"
 
 print("\a") # Booooop
 
 # Clear the terminal, then print the app's version
-try:os.system('cls')
+try:os.system(CLEAR_COMMAND)
 except:NotImplemented
 if not ISDEV:
     print(DULLYELLOW + "WinLine " + Appversion + osext + RESET)
 else:
-    print(DEV_COMPONENT + "WinLine " + Appversion + osext + RESET)
+    print(DEV_COLOR + "WinLine " + Appversion + osext + RESET)
 
 # Warn the user if the current OS is not Windows
 if NON_WIN:
     print(RED + "\nThis instance of WinLine is running on a non-Windows operating system. Some features are unavailable, and some commands may not work correctly." + RESET)
-    print(RED + "Configuration is only available on Windows. Some advanced features are unavailable" + RESET)
+    # print(RED + "Configuration is only available on Windows. Some advanced features are unavailable" + RESET)
 
 print("")
 
@@ -201,6 +213,7 @@ except:
 
 # Function to get a list of all connected drives
 # Modified from code found on https://python-forum.io/thread-31231.html
+# (I think we originally pulled this from Stack Overflow, but we can't find the thread anymore)
 def get_drives():
     if not NON_WIN:
         drives = []
@@ -217,12 +230,14 @@ def get_drives():
             else:
                 print(DRIVES + letter + ":/" + RESET)
     else:
-        print(RED + "This feature is only available on Windows systems" + RESET)
+        print(YELLOW + "Trying to list drives using fdisk... You may be prompted to enter your password" + RESET)
+        os.system("sudo fdisk -l")
+        # print(RED + "This feature is only available on Windows systems" + RESET)
 
 # This configuration
 def doConfig():
     global config
-    if not NON_WIN: # Only runs if the OS is Windows
+    if True: # Relic of os-based feature selection. This has since been removed, but we haven't fixed indents yet
         if not (os.path.isfile(DATAPATH + "/config")) or (open(DATAPATH + "/config", "r").read() == ""):
             sleep(0.75)
             print(DULLYELLOW + "Welcome to WinLine!")
@@ -316,6 +331,9 @@ def doConfig():
             except:
                 NotImplemented
 
+        if not os.path.isfile(DATAPATH + "/channel"):
+            open(DATAPATH + "/channel", "x").close()
+
         # End
 
         # If the owner_name file got deleted, ask for a new name
@@ -335,10 +353,11 @@ def doConfig():
         config = "allow_components: true\nkeyboardInturruptEnabled: true\nadvancedMode: enabled\nsysrun_failed_commands: enabled\n"
 
 # Run configuration
+#if not NON_WIN: doConfig()
 doConfig()
 
 # Print a nice welcome message
-if not (NON_WIN) and (SHOW_NAME in config):
+if (SHOW_NAME in config): #not (NON_WIN) and 
     try:
         if os.path.isfile(DATAPATH + "/owner_name"):
             locprefix = MAGENTA + open(DATAPATH+"/owner_name", "r").read() + BLUE + "~ " + RESET
@@ -355,12 +374,12 @@ if not (NON_WIN) and (SHOW_NAME in config):
 # Load components and populate lists
 if not (USE_SAFE_MODE in config):
     if (ALLOW_COMPONENTS in config):
-        if not NON_WIN:
+        if True: #not NON_WIN
             try:
-                for add_on in os.listdir(DRIVELETTER + ":/ProgramData/WinLine/components/"):
+                for add_on in os.listdir(DATAPATH + "/components/"):
                     if (".py" in add_on):loaded_components.append(add_on.split(".", 1)[0]);enabled_components.append(add_on.split(".", 1)[0])
 
-                for add_on in os.listdir(DRIVELETTER + ":/ProgramData/WinLine/components/unloaded"):
+                for add_on in os.listdir(DATAPATH + "/components/unloaded"):
                     if (".py" in add_on):enabled_components.append(add_on.split(".", 1)[0])
             except:loaded_components=[]
             try:
@@ -422,6 +441,7 @@ def main():
             command = command.strip("[")
             command = command.strip("'")
             command = command.strip("]")
+            command = command.lower()
             # End command
 
             ### **************************************************************************** ###
@@ -435,7 +455,7 @@ def main():
 
 
                 if (ADVANCEDMODE in config):
-                    print(SPECIALDRIVE + "\nAdvanced commands: 'reset-term', 'sysRun'")
+                    print(SPECIALDRIVE + "\nAdvanced commands: 'reset-term', 'sysrun'")
                     print("For more info, warnings, and usage examples, use " + RED + "man secretCommands" + RESET)
 
                 if len(loaded_components) != 0:
@@ -565,7 +585,7 @@ def main():
 
             elif (command.lower() == "clear"):
                 # only supported on Windows for some ungodly reason. We'll probably fix this later
-                os.system('cls')
+                os.system(CLEAR_COMMAND)
 
             ### **************************************************************************** ###
 
@@ -573,10 +593,11 @@ def main():
             elif (command.split(maxsplit=1)[0] == "term" or command.lower() == "term"):
                 if (("-r" in command) or ("restart" in command)): # Restart the current terminal. This reloads all code from the disk without needing to fully close the program
                     # This may have some incompatibility with funky terminals. We've also had a few issues with Powershell in the past, but we think we fixed it
-                    os.system('cls')
+                    os.system(CLEAR_COMMAND)
                     os.system('title ' + __file__)
                     sleep(1)
-                    subprocess.call("python " + __file__)
+                    if not NON_WIN: subprocess.call("python " + __file__)
+                    else:os.system("python3 " + __file__)
                     sys.exit()
                     os.abort()
 
@@ -589,6 +610,9 @@ def main():
             elif ((command.split(maxsplit=1)[0] == "del") or (command.split(maxsplit=1)[0] == "remove")):
                 try:
                     pathToFile = "%s" % command.split(maxsplit=1)[1]
+
+                    if (os.path.isfile(location + "/" + pathToFile)):
+                        pathToFile = location + "/" + pathToFile
 
                     if (os.path.isfile(location + "/" + pathToFile)):
                         pathToFile = location + "/" + pathToFile
@@ -624,6 +648,9 @@ def main():
                 try:
                     try:
                         pathToFile = "%s" % command.split(maxsplit=2)[2]
+
+                        if (os.path.isfile(location + "/" + pathToFile)):
+                            pathToFile = location + "/" + pathToFile
                         
                         if (os.path.isdir(location + "/" + pathToFile)):
                             pathToFile = location + "/" + pathToFile
@@ -752,27 +779,26 @@ def main():
             
             # List interesting facts about WinLine
             elif (command.lower() == "about"):
+                ch = open(DATAPATH + "/channel", "r")
+                chan = ch.read()
+                if chan == "":chan="Stable"
+                print(YELLOW + "WinLine: a better terminal for Windows")
+                print(BLUE + "Developer: " + MAGENTA + "Psychon Development Studios")
+                print(BLUE + "Version: " + MAGENTA + Appversion)
+                print(BLUE + "Channel: " + MAGENTA + chan)
                 try:
-                    aboutPage = open(DATAPATH + "/about.txt", "r").read()
+                    advmd = "ENABLED" if ADVANCEDMODE in config else "DISABLED"
+                    cpn = "ENABLED" if ALLOW_COMPONENTS in config else "DISABLED"
+                except:advmd="?";cpn="?"
+                if (NON_WIN):cpn="DISALLOWED"
+                print(BLUE + "Advanced mode: " + MAGENTA + advmd)
+                print(BLUE + "Components: " + MAGENTA + cpn)
+                print(YELLOW + "\nOUR GOAL:" + RESET + "\nWinLine is intended to provide a better terminal experience, similar to the Debian terminal. This is a fully-featured terminal emulator, with customization, addon capabilities, and more.\nWinLine will never connect to the internet unless you direct it to, and your data will never leave your device. In addition, your terminal history is immediately erased after closing the window, making sure your commands are never read." + RESET)
 
-                    print("\n")
-                    print(aboutPage)
+                if NON_WIN:
+                    print(RED + "\nThis instance of WinLine is running on a non-Windows operating system. Some features are unavailable, and some commands may not work correctly." + RESET)
 
-                except Exception as err:
-                    print(YELLOW + "WinLine: a better terminal for Windows")
-                    print(BLUE + "Developer: " + MAGENTA + "Psychon Development Studios")
-                    print(BLUE + "Version: " + MAGENTA + Appversion)
-                    try:
-                        advmd = "ENABLED" if ADVANCEDMODE in config else "DISABLED"
-                        cpn = "ENABLED" if ALLOW_COMPONENTS in config else "DISABLED"
-                    except:advmd="?";cpn="?"
-                    if (NON_WIN):cpn="DISALLOWED"
-                    print(BLUE + "Advanced mode: " + MAGENTA + advmd)
-                    print(BLUE + "Components: " + MAGENTA + cpn)
-                    print(YELLOW + "\nOUR GOAL:" + RESET + "\nWinLine is intended to provide a better terminal experience, similar to the linux terminal, for Windows users. This is a fully-featured terminal emulator, with customization, addon capabilities, and more. You can even run Windows system commands by enabling SysRun in the configuration!\nWinLine will never connect to the internet unless you direct it to (such as for using ScreenCast or the ping command), and your data will never leave your device. In addition, your terminal history is immediately erased after closing the window, making sure your commands are never read." + RESET)
-
-                    if NON_WIN:
-                        print(RED + "\nThis instance of WinLine is running on a non-Windows operating system. Some features are unavailable, and some commands may not work correctly." + RESET)
+                ch.close()
                 print("")
 
             ### **************************************************************************** ###
@@ -787,7 +813,7 @@ def main():
 
                     else:
                         print(BLUE + "127.0.0.1" + RESET)
-                        print(RED + "This device appears to be lacking a network connection" + RESET)
+                        print(RED + "no internet detected" + RESET)
                 except Exception as err:
                     print(RED + "Error: failed to get device IP info: " + str(err) + RESET)
                 print("")
@@ -805,7 +831,8 @@ def main():
                         count = 10
 
                     try:
-                        subprocess.run('ping -n %s %s' % (count, target))
+                        if not NON_WIN: subprocess.run('ping -n %s %s' % (count, target))
+                        else: os.system('ping -n %s %s' % (count, target))
                     except Exception as err:
                         print(RED + str(err) + RESET)
                 
@@ -820,7 +847,7 @@ def main():
             ### **************************************************************************** ###
 
             # Immediately run a command on the system itself, bypassing WinLine
-            elif (command.split(maxsplit=1)[0] == "sysRun"):
+            elif (command.split(maxsplit=1)[0] == "sysrun"):
                 if not (USE_SAFE_MODE in config):
                     try:
                         os.system(command.split(maxsplit=1)[1])
@@ -861,7 +888,8 @@ def main():
                     print("\n" + BLUE + "Connecting to %s..."%target + RESET + "\n")
 
                     try:
-                        subprocess.run("ssh " + target) # Uses the platform's SSH implementation
+                        if not NON_WIN: subprocess.run("ssh " + target) # Uses the platform's SSH implementation
+                        else:os.system("ssh " + target)
                     
                     except KeyboardInterrupt:
                         print(BLUE + "Abort" + RESET) # Exited through Ctrl+C
@@ -884,7 +912,7 @@ def main():
                     subprocess.call("tasklist /FO TABLE") # Implementation for Windows systems
                     print("")
                 else:
-                    subprocess.call("top") # Implementation for Linux systems
+                    os.system("top") # Implementation for Linux systems
                     print("")
 
             ### **************************************************************************** ###
@@ -903,7 +931,7 @@ def main():
                 else:
                     # Implementation for Linux
                     try:
-                        subprocess.call("kill " + command.split(maxsplit=1)[1])
+                        os.system("kill " + command.split(maxsplit=1)[1])
                     except:
                         print(RED + "Error trying to kill the process" + RESET)
             
@@ -911,29 +939,26 @@ def main():
 
             # Reset the terminal
             elif (command == "reset-term"):
-                if ISDEV:
-                    if not NON_WIN:
-                        print("")
-                        print(RED + "Warning: Resetting application data will reset all preferences and purge your data. This action CANNOT be undone. THIS WILL ERASE ALL COMPONENTS AND SCRIPTS!")
-                        cont = input("Are you sure you want to continue? [Y/N] > " + RESET).capitalize()
+                print(RED + "\nWARNING: resetting WinLine data will delete all preferences and data. This action CANNOT be undone. This will also erase all components!" + RESET)
+                cont = input("Do you want to continue? [Y/N] > " + RESET).capitalize()
 
-                        if (cont == "Y"):
-                            print(RED + "Deleting data..." + RESET)
-                            try:
-                                shutil.rmtree(DATAPATH, ignore_errors=True) # Wipe all data
-                            except Exception as err:
-                                print(str(err))
-                                sleep(1)
+                if cont == "Y":
+                    print(DRIVES + "Erasing WinLine data...\n" + RESET)
 
-                            sleep(2.25)
-                            os.system('cls')
-                            subprocess.call("python " + __file__)
-                            sys.exit()
-                        sleep(1)
-                    else:
-                        print(RED + "WinLine cannot be reset on this system because local data is only stored on Windows systems" + RESET)
-                else:
-                    print(YELLOW + "This command is currently being re-written and is unavailable" + RESET)
+                    try:os.remove(DATAPATH + "/config");print(YELLOW + "Config erased" + RESET)
+                    except:print(RED + "Failed to remove config" + RESET)
+                    try:os.remove(DATAPATH + "/channel");print(YELLOW + "Channel config erased" + RESET)
+                    except:print(RED + "Failed to remove channel config" + RESET)
+                    try:os.remove(DATAPATH + "/development_components.txt");print(YELLOW + "Dev Components list erased" + RESET)
+                    except:NotImplemented
+                    try:os.remove(DATAPATH + "/owner_name");print(YELLOW + "Owner name erased" + RESET)
+                    except:print(RED + "Failed to remove owner name" + RESET)
+                    try:os.remove(DATAPATH + "/package_version");print(YELLOW + "PV erased" + RESET)
+                    except:NotImplemented
+                    try:shutil.rmtree(DATAPATH + "/components");print(YELLOW + "Components erased" + RESET)
+                    except:print(RED + "Failed to remove components" + RESET)
+
+                    print(YELLOW + "Data has been erased" + RESET)
 
             ### **************************************************************************** ###
 
@@ -947,6 +972,9 @@ def main():
                 if not NON_WIN:
                     target = command.split(maxsplit=1)[1]
 
+                    if (os.path.isfile(location + "/" + target)):
+                        target = location + "/" + target
+
                     subprocess.call("attrib +s +h %s"%target)
                     print(SPECIALDRIVE + "Done\n" + RESET)
 
@@ -959,6 +987,9 @@ def main():
             elif (command.split(maxsplit=1)[0] == "show"):
                 if not NON_WIN:
                     target = command.split(maxsplit=1)[1]
+
+                    if (os.path.isfile(location + "/" + target)):
+                        target = location + "/" + target
 
                     subprocess.call("attrib -s -h %s"%target)
                     print(SPECIALDRIVE + "Done\n" + RESET)
@@ -976,7 +1007,7 @@ def main():
                     print(SPECIALDRIVE + "Launching explorer..." + RESET)
                     subprocess.run("explorer.exe")
                 else:
-                    print(RED + "This feature is only available on Windows")
+                    print(RED + "This command only works on Windows systems" + RESET)
 
             ### **************************************************************************** ###
 
@@ -1026,7 +1057,7 @@ def main():
                             # Wipe the screen, go to the beginning
                             print(u"\x1b[0J\x1b[H")
                             sys.stdout.write(u"\x1b[?25l")
-                            os.system("cls")
+                            os.system(CLEAR_COMMAND)
                             # print(u"\x1b[?25l")
 
                             # Print all information
@@ -1045,7 +1076,8 @@ def main():
                         sys.stdout.write(u"\x1b[?25h")
                         print(RED + "Installing dependency" + RESET)
                         try:
-                            subprocess.call("pip install psutil")
+                            if not NON_WIN: subprocess.call("pip install psutil")
+                            else:os.system("python pip install psutil")
                             print(DULLYELLOW + "Run " + BLUE + " term -r" + DULLYELLOW + " to finish installation")
                         except:print(RED + "Error while installing.\n" + YELLOW + "Error " + error_general.dep_in_fail + RESET)
                 
@@ -1088,7 +1120,8 @@ def main():
 
             # Oooh boy. Time for the CHUNKY code for components. Bear with us
             elif ("components" in command or "component" in command or "addons" in command):
-                if NON_WIN:print(RED + "Warning: Components are not supported on non-Windows systems")
+                # if NON_WIN:print(RED + "Warning: Components are not supported on non-Windows systems")
+                if NON_WIN:print(RED + "Components might not function correctly on this system. Please be sure to report any bugs you encounter!" + RESET)
                 if not (ALLOW_COMPONENTS in config):print(RED + "Warning: Components have been disallowed from the configuration file\n\n" + RESET)
                 if not (USE_SAFE_MODE in config):
                     try:
@@ -1115,7 +1148,8 @@ def main():
                                     try:
                                         # Move the component to /components/unloaded, and mark it as unloaded
                                         shutil.move(DATAPATH + "/components/%s.py"%whatToUnload, DATAPATH + "/components/unloaded/%s.py"%whatToUnload)
-                                        loaded_components.remove(whatToUnload)
+                                        try:loaded_components.remove(whatToUnload)
+                                        except:NotImplemented
                                         print(DRIVES + "Component unloaded" + RESET)
                                     except:
                                         print(RED + "Unable to unload component" + RESET)
@@ -1136,7 +1170,8 @@ def main():
                                     if (whatToLoad in enabled_components) and not whatToLoad in ignore_load_status: # Find the specified component and move it to /components
                                         try:
                                             shutil.move(DATAPATH + "/components/unloaded/%s.py"%whatToLoad, DATAPATH + "/components/%s.py"%whatToLoad)
-                                            loaded_components.append(whatToLoad)
+                                            try:loaded_components.append(whatToLoad)
+                                            except:NotImplemented
                                             print(DRIVES + "Component loaded" + RESET)
                                         except:
                                             print(RED + "Unable to load component" + RESET)
@@ -1176,8 +1211,10 @@ def main():
                                 try: # Move the component from the unloaded folder to /components/disabled
                                     # Prevents the component from being accidentally loaded
                                     shutil.move(DATAPATH + "/components/unloaded/%s.py"%whatToDisable, DATAPATH + "/components/disabled/%s.py"%whatToDisable)
-                                    enabled_components.remove(whatToDisable)
-                                    loaded_components.remove(whatToDisable)
+                                    try:
+                                        enabled_components.remove(whatToDisable)
+                                        loaded_components.remove(whatToDisable)
+                                    except:NotImplemented
                                     print(DRIVES + "Component disabled" + RESET)
                                 except:
                                     print(RED + "Unable to disable the component" + RESET)
@@ -1213,12 +1250,12 @@ def main():
 
                         elif "--purge" in flags:
                             whatToPurge = command.split(maxsplit=2)[2]
-                            if not (whatToPurge in loaded_components) and os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/disabled/%s.py"%whatToPurge):
+                            if not (whatToPurge in loaded_components) and os.path.isfile(DATAPATH + "/components/disabled/%s.py"%whatToPurge):
                                 print(RED + "WARNING: Purging components will ERASE THEM FROM YOUR DEVICE. This CANNOT be undone.")
                                 contin = input(YELLOW + "Are you sure you want to continue? [Y/N] > ").capitalize()
 
                                 if contin == "Y":
-                                    os.remove(DRIVELETTER + ":/ProgramData/winLine/components/disabled/%s.py"%whatToPurge) # Try to delete the executable python file
+                                    os.remove(DATAPATH + "/components/disabled/%s.py"%whatToPurge) # Try to delete the executable python file
 
                                     # If this is a pack, remove its data folder
                                     if os.path.isdir(DATAPATH + "/components/packs/%s"%whatToPurge):
@@ -1408,37 +1445,37 @@ def main():
 
                         else:
                             # Lists installed components
-                            if not (NON_WIN):
+                            if True:#not (NON_WIN)
                                 print(YELLOW + "The following components are currently installed:" + RESET)
                                 dev_components = []
                                 disabled = []
                                 # Populate disabled components list
-                                for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/disabled/"):
+                                for component in os.listdir(DATAPATH + "/components/disabled/"):
                                     disabled.append(component.split(".", maxsplit=1)[0])
                                 # print(loaded_components)
                                 # print(disabled)
                                 
                                 # Populate loaded components list
-                                for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/"):
+                                for component in os.listdir(DATAPATH + "/components/"):
                                     # if ".py" in component:
                                         load_string = ""
                                         ignore_load_status = open(DATAPATH + "/development_components.txt").read()
 
-                                        if not (component.split(".", 1)[0] in ignore_load_status) and os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component):
+                                        if not (component.split(".", 1)[0] in ignore_load_status) and os.path.isfile(DATAPATH + "/components/%s"%component):
                                             if component.split(".", 1)[0] in found_dangerous:load_string="(DANGEROUS)";colorToUse=RED
                                             elif(component.split(".", 1)[0] in loaded_components and component.split(".", 1)[0] in enabled_components):load_string=SPECIALDRIVE+"(loaded)";colorToUse=BLUE
                                             elif(component.split(".", 1)[0] in disabled):load_string=RED + "(disabled)";colorToUse=DRIVES
                                             elif(component.split(".", 1)[0] in enabled_components):load_string="(unloaded)";colorToUse=DRIVES
                                             elif not (ALLOW_COMPONENTS in config):load_string=(RED + "(blacklisted)" + RESET);colorToUse=RED
-                                            elif not (os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component)):load_string=RED+"(unsupported format)";colorToUse=DRIVES
+                                            elif not (os.path.isfile(DATAPATH + "/components/%s"%component)):load_string=RED+"(unsupported format)";colorToUse=DRIVES
                                             else:load_string=RED+"(restart WinLine to enable)";colorToUse=DRIVES
 
                                             print(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
-                                        elif os.path.isfile(DRIVELETTER + ":/ProgramData/winLine/components/%s"%component):
+                                        elif os.path.isfile(DATAPATH + "/components/%s"%component):
                                             load_string=DEV_COMPONENT+"(developer)";colorToUse=DEV_COMPONENT
                                             dev_components.append(colorToUse + component.split(".", 1)[0] + " " + load_string + RESET)
 
-                                for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/unloaded"):
+                                for component in os.listdir(DATAPATH + "/components/unloaded"):
                                     # Populate disabled components list
                                     if component in found_dangerous:load_string="(DANGEROUS)";colorToUse=RED
                                     elif(component.split(".", 1)[0] in disabled):load_string=RED + "(disabled)";colorToUse=DRIVES
@@ -1452,7 +1489,7 @@ def main():
 
                                 print("")
 
-                                for component in os.listdir(DRIVELETTER + ":/ProgramData/winLine/components/disabled"):
+                                for component in os.listdir(DATAPATH + "/components/disabled"):
                                     # Populate disabled components list
                                     if component in found_dangerous:
                                         load_string="(DANGEROUS)";colorToUse=RED
@@ -1475,7 +1512,9 @@ def main():
                     print(YELLOW + "Please select 'Notepad' or another text editor to open the file" + RESET)
                     os.startfile(DRIVELETTER + ":/ProgramData/winLine/config")
                 else:
-                    print(RED + "Configuration cannot be modified on non-Windows systems" + RESET)
+                    # print(RED + "Configuration cannot be modified on non-Windows systems" + RESET)
+                    print(YELLOW + "Attempting to open the config file in NANO" + RESET)
+                    os.system("nano /home/%s/.winline/config"%os.getlogin())
 
             ### **************************************************************************** ###
             
@@ -1567,7 +1606,7 @@ def main():
             elif command == "edition" or command == "key":
                 try:
                     if sys.path[0] == "c:\\Users\\%s\\Downloads\\VisualStudioCode\\Python\\winLine"%open("C:/ProgramData/PsychonDevStudios/userKey.txt", "r").read() or sys.path[0] == "w:\\":
-                        print(DEV_COMPONENT + KEY_DEVMODE + RESET)
+                        print(DEV_COLOR + KEY_DEVMODE + RESET)
                     else:
                         print(SPECIALDRIVE + KEY_DISTMODE + RESET)
                 except:
@@ -1648,7 +1687,10 @@ def main():
                 else:select_valid = False
 
                 if select_valid:
-                    stage_path = DRIVELETTER + ":/ProgramData/wlstage"
+                    if not NON_WIN:
+                        stage_path = DRIVELETTER + ":/ProgramData/wlstage"
+                    else:
+                        stage_path = "/tmp/wlstage"
                     print(YELLOW + "Staging..." + RESET)
                     if not os.path.isdir(stage_path):
                         os.mkdir(stage_path)
@@ -1693,6 +1735,8 @@ def main():
 
                         print(SPECIALDRIVE + "Recovery finished" + RESET)
 
+            ### **************************************************************************** ###
+
             elif command == "backup":
                 print(YELLOW + "Please wait, collecting files..." + RESET)
                 backup = ZipFile(DATAPATH + '/winline_backup.wlc', 'w')
@@ -1721,19 +1765,34 @@ def main():
                 except:NotImplemented # Fail silently
 
                 print(YELLOW + "Backup created! Copying to desktop...")
-                shutil.copy(DATAPATH + "/winline_backup.wlc", DRIVELETTER + ":/Users/%s/Desktop/winline_backup.wlc"%os.getlogin())
+                try:
+                    shutil.copy(DATAPATH + "/winline_backup.wlc", DRIVELETTER + ":/Users/%s/Desktop/winline_backup.wlc"%os.getlogin())
 
-                os.remove(DATAPATH + '/winline_backup.wlc')
+                    os.remove(DATAPATH + '/winline_backup.wlc')
+                except:print(RED + "Backup was not moved to desktop. You can find it here: " + DATAPATH + RESET)
                 print(SPECIALDRIVE + "Backup complete!" + RESET)
+
+            ### **************************************************************************** ###
 
             elif command == "update":
                 print(YELLOW + "Contacting server and checking for updates..." + RESET)
+                if not NON_WIN:
+                        stage_path = DRIVELETTER + ":/ProgramData/wlstage"
+                else:
+                        stage_path = "/tmp/wlstage"
                 keepTrying = True
                 failed = 0
                 okay = True
                 while keepTrying == True:
                     try:
-                        server_version = str(urlRequest.urlopen(REMOTE_SERVER  + "/latest_version").read(), "'UTF-8'")
+                        chanfile = open(DATAPATH + "/channel", "r")
+                        CHANNEL = chanfile.read()
+                        chanfile.close()
+
+                        if CHANNEL == "stable":
+                            server_version = str(urlRequest.urlopen(REMOTE_SERVER  + "/latest_version").read(), "'UTF-8'")
+                        else:
+                            server_version = str(urlRequest.urlopen(REMOTE_SERVER  + "/latest_version_" + CHANNEL).read(), "'UTF-8'")
                         # print(BLUE + "Current version: %s"%VERSION_ID + RESET)
                         # print(YELLOW + "Latest version: %s"%server_version + RESET)
                         keepTrying = False
@@ -1747,24 +1806,27 @@ def main():
 
                 if okay:
                     if (server_version != VERSION_ID):
-                        print(YELLOW + "You are currently using WinLine " + MAGENTA + VERSION_ID + YELLOW + ", and version " + MAGENTA + server_version + YELLOW + " is available" + RESET)
-                        cinst = input(BLUE + "Do you want to continue? [Y/N] > " + RESET).capitalize()
+                        print(YELLOW + "You are currently using WinLine " + SEAFOAM + Appversion + YELLOW + ", and version " + SEAFOAM + server_version + YELLOW + " is available" + RESET)
+                        cinst = input(BLUE + "Do you want to update? [Y/N] > " + RESET).capitalize()
 
                         if cinst == "Y":
                             print(YELLOW + "\nDownloading update..." + RESET)
                             try:
-                                os.mkdir(DRIVELETTER + ":/ProgramData/wlstage")
+                                os.mkdir(stage_path)
                             except:
-                                shutil.rmtree(DRIVELETTER + ":/ProgramData/wlstage")
-                                os.mkdir(DRIVELETTER + ":/ProgramData/wlstage")
+                                shutil.rmtree(stage_path)
+                                os.mkdir(stage_path)
                             everythingIsOkay = True
                             keepTrying = True
                             failed = 0
 
                             try:
-                                with urlRequest.urlopen(REMOTE_SERVER  + "/winline.dat") as remote_archive:
+                                if CHANNEL == "stable":remFile = REMOTE_SERVER  + "/winline.dat"
+                                else:remFile = REMOTE_SERVER  + "/winline_%s.dat"%CHANNEL
+
+                                with urlRequest.urlopen(remFile) as remote_archive:
                                     with ZipFile(BytesIO(remote_archive.read())) as update_package:
-                                        update_package.extractall(DRIVELETTER + ":/ProgramData/wlstage")
+                                        update_package.extractall(stage_path)
                                 keepTrying = False
                             except Exception as err:
                                 failed += 1
@@ -1777,13 +1839,13 @@ def main():
                             if everythingIsOkay:
                                 print(YELLOW + "Updating core files..." + RESET)
                                 try:
-                                    shutil.copy(DRIVELETTER + ":/ProgramData/wlstage/terminal.py", DRIVELETTER + ":/ProgramData/winLine/terminal.py")
-                                    shutil.copy(DRIVELETTER + ":/ProgramData/wlstage/utilities.py", DRIVELETTER + ":/ProgramData/winLine/utilities.py")
+                                    shutil.copy(stage_path + "/terminal.py", DATAPATH + "/terminal.py")
+                                    shutil.copy(stage_path + "/utilities.py", DATAPATH + "/utilities.py")
                                     print(SPECIALDRIVE + "Update complete! Please restart WinLine to use the new version" + RESET)
-                                except:
-                                    print(RED + "Core files could not be updated" + RESET)
+                                except Exception as err:
+                                    print(RED + "Core files could not be updated: " + str(err) + RESET)
 
-                                shutil.rmtree(DRIVELETTER + ":/ProgramData/wlstage", True)
+                                shutil.rmtree(stage_path, True)
 
                                 # update_docs = input(BLUE + "Do you want to update the local documentation files? [Y/N] > ").capitalize()
 
@@ -1814,19 +1876,62 @@ def main():
                     print(RED + "Unable to connect to server" + RESET)
 
                 print("")
-                shutil.rmtree(DRIVELETTER + ":/ProgramData/wlstage", True)
-            
-            # This is only for testing purposes. Please don't actually use this, it WILL crash Python
+                shutil.rmtree(stage_path, True)
+
+            ### **************************************************************************** ###
+                        
+            # This is only for testing purposes. Please don't actually use this, it WILL crash Python itself!
             elif command == "nuke":exec(type((lambda: 0).__code__)(0, 0, 0, 0, 0, 0, b'\x053', (), (), (), '', '', 0, b''))
 
+            ### **************************************************************************** ###
+
+            elif command == "colors":colorCycle()
+
+            ### **************************************************************************** ###
+
+            # Command to switch or view channels
+            elif "channel" in command:
+                try: chan_to_switch_to = command.split(maxsplit=1)[1].lower();view=False
+                except:view=True
+
+                if not view:
+                    if chan_to_switch_to in VALID_CHANNELS:
+                        chanfile = open(DATAPATH + "/channel", "w")
+                        chanfile.write(chan_to_switch_to)
+                        chanfile.close()
+
+                        print(YELLOW + "Switched to channel: %s"%chan_to_switch_to + RESET)
+
+                    else:
+                        print(RED + "That channel is not valid. Please run this command without any parameters to see valid channels\n" + RESET)
+
+                else:
+                    print(YELLOW + "The following channels are currently available:" + RESET)
+                    for channel in VALID_CHANNELS:
+                        if channel == "stable":color = SPECIALDRIVE
+                        elif channel == "beta":color = RED
+                        else:color = YELLOW
+
+                        print(color + channel + RESET)
+
+                    chanfile = open(DATAPATH + "/channel", "r")
+                    ch = chanfile.read()
+                    chanfile.close()
+
+                    print(YELLOW + "\nCurrent channel: " + SEAFOAM + ch + RESET)
+
+                print("")
+
+            ### **************************************************************************** ###
+
             else:
-                if not (NON_WIN):
+                if True:#not (NON_WIN)
                     addin_commands = []
-                    for add_on in os.listdir(DRIVELETTER + ":/ProgramData/WinLine/components/"):
+                    for add_on in os.listdir(DATAPATH + "/components/"):
                         if (".py" in add_on):
                             addin_commands.append(add_on.split(".", 1)[0])
                     
-                    for add_on in os.listdir(DRIVELETTER + ":/ProgramData/WinLine/components/unloaded"):
+                    for add_on in os.listdir(DATAPATH + "/components/unloaded"):
                         if (".py" in add_on):
                             addin_commands.append(add_on.split(".", 1)[0])
                 else:
@@ -1838,7 +1943,8 @@ def main():
                         runIndex = addin_commands.index(command)
                         runCommand = addin_commands[runIndex]
                         # print(DRIVELETTER + ":/ProgramData/winLine/components/%s.py"%runCommand)
-                        subprocess.run("python3 " + DRIVELETTER + ":/ProgramData/winLine/components/%s.py"%runCommand)
+                        if not NON_WIN:subprocess.run("python3 " + DATAPATH + "/components/%s.py"%runCommand)
+                        else:os.system("python3 " + DATAPATH + "/components/%s.py"%runCommand)
                     else:
                         if ALLOW_COMPONENTS in config:
                             if not (command in enabled_components):print(RED + "That component hasn't been loaded yet. To load it, run the '" + BLUE + "term -r" + RED + "' command" + RESET)
@@ -1849,17 +1955,19 @@ def main():
 
                 elif not (SYSRUN_FAILED_COMMANDS in config):
                     sys.stdout.write(u"\x1b[1A" + u"\x1b[2K" + "\r" + locprefix + location + "> " + "\u001b[1;41m" + command + RESET + "\n")
-                    print(RED + "Unrecognized command\n" + RESET)
+                    print(RED + "Unknown command\n" + RESET)
                 else:
                     if not (USE_SAFE_MODE in config):
                         try:
                             # print(BLUE + "System: " + RESET)
-                            subprocess.run(command)
+                            # subprocess.run(command)
+                            os.system(command)
+                            print("")
                         except Exception as err:
-                            print(RED + "Failed to run command: Not internal command and OS reported " + str(err) + RESET + "\n")
+                            print(RED + "SysRun Error: " + str(err) + RESET + "\n")
                     
                     else:
-                        print(RED + "Failed to run command: Not internal command and safe mode is active" + RESET + "\n")
+                        print(RED + "This is not an internal command. Safe mode is preventing SysRun from executing this command" + RESET + "\n")
  
 
         except KeyboardInterrupt:
@@ -1871,15 +1979,15 @@ def main():
         except IndexError:
                 sys.stdout.write(u"\x1b[1A" + u"\x1b[2K" + "\r")
 
-        except NameError: print(YELLOW + error_general.nameError + RESET)
+        except NameError: print(YELLOW + "\nERRCODE " + error_general.nameError + RESET)
 
-        except OverflowError: print(YELLOW + error_general.ofe + RESET)
+        except OverflowError: print(YELLOW + "\nERRCODE " + error_general.ofe + RESET)
 
-        except RecursionError: print(YELLOW + error_general.recursion + RESET)
+        except RecursionError: print(YELLOW + "\nERRCODE " + error_general.recursion + RESET)
 
-        except OSError: print(YELLOW + error_general.osErr + RESET)
+        except OSError: print(YELLOW + "\nERRCODE " + error_general.osErr + RESET)
 
-        except SystemError: print(YELLOW + error_general.syserr + RESET)
+        except SystemError: print(YELLOW + "\nERRCODE " + error_general.syserr + RESET)
 
         except Exception as err:
             if ("has no attribute 'induce'" in str(err)):
@@ -1891,7 +1999,7 @@ def main():
 if (ADVANCEDMODE in config) and not ISDEV:
     print(SPECIALDRIVE + "Advanced mode is enabled\n" + RESET)
 elif ISDEV:
-    print(DEV_COMPONENT + "Developer mode is enabled\n" + RESET)
+    print(DEV_COLOR + "Developer mode is enabled\n" + RESET)
 
 if not (USE_SAFE_MODE in config):
     if ENABLE_AV_CHECK in config:
@@ -1907,6 +2015,9 @@ print("")
 while True:
     try:
         main()
+    except KeyboardInterrupt:
+        if ENABLEKEYBOARDINTURRUPT in config:
+            os.abort()
     except Exception as err:
         if not (RESET_ON_ERROR in config):
             print(YELLOW + "\n##-----------------------##"+RESET)
@@ -1924,16 +2035,17 @@ while True:
             time.sleep(0.1)
             os.system("title WinLine Crash Handler")
             time.sleep(0.1)
-            print(RED + "WinLine has experienced a fatal error" + RESET)
+            print(RED + "WinLine has experienced an error" + RESET)
             time.sleep(0.1)
             print(YELLOW + "Error message: " + str(err) + "\n" + RESET)
             time.sleep(0.1)
             reboot = input(BLUE + "Do you want to restart WinLine? [Y/N] > ").capitalize()
 
             if reboot == ("Y"):
-                os.system("cls")
+                os.system(CLEAR_COMMAND)
                 time.sleep(2)
-                subprocess.call("python " + __file__)
+                if not NON_WIN:subprocess.call("python " + __file__)
+                else:os.system("python3 " + __file__)
                 os.abort()
             else:
                 print(YELLOW + "Exiting crash handler..." + RESET)
