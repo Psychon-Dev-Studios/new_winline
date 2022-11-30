@@ -456,7 +456,7 @@ def main():
 
                 if (ADVANCEDMODE in config):
                     print(SPECIALDRIVE + "\nAdvanced commands: 'reset-term', 'sysrun'")
-                    print("For more info, warnings, and usage examples, use " + RED + "man secretCommands" + RESET)
+                    # print("For more info, warnings, and usage examples, use " + RED + "man secretCommands" + RESET)
 
                 if len(loaded_components) != 0:
                     print(YELLOW + "\nAddon components have added additional commands. Use the " + BLUE + "components " + YELLOW + "command to list them" + RESET)
@@ -465,7 +465,7 @@ def main():
                 
 
                 if (NON_WIN):
-                    print(RED + "Some features are only available on Windows and have been disabled automatically.\n")
+                    print(RED + "Please be aware that some commands may not work correctly on Linux yet!\n")
 
                 print("")
 
@@ -551,10 +551,11 @@ def main():
                     abort = True
 
                 except Exception as err:
-                    print(RED + "Path not found, showing contents of " + location + RESET)
-                        
-                    pathToList = location
-                    dirContents = os.listdir(location)
+                    print(RED + "Path not found"+ RESET)
+                    
+                    pathToList = ""; dirContents = ""; abort = True
+                    # pathToList = location
+                    # dirContents = os.listdir(location)
                 
                 if not abort:
                     try:
@@ -584,7 +585,6 @@ def main():
             ### **************************************************************************** ###
 
             elif (command.lower() == "clear"):
-                # only supported on Windows for some ungodly reason. We'll probably fix this later
                 os.system(CLEAR_COMMAND)
 
             ### **************************************************************************** ###
@@ -790,7 +790,7 @@ def main():
                     advmd = "ENABLED" if ADVANCEDMODE in config else "DISABLED"
                     cpn = "ENABLED" if ALLOW_COMPONENTS in config else "DISABLED"
                 except:advmd="?";cpn="?"
-                if (NON_WIN):cpn="DISALLOWED"
+                if (NON_WIN):cpn="ENABLED (LINUX MODE)"
                 print(BLUE + "Advanced mode: " + MAGENTA + advmd)
                 print(BLUE + "Components: " + MAGENTA + cpn)
                 print(YELLOW + "\nOUR GOAL:" + RESET + "\nWinLine is intended to provide a better terminal experience, similar to the Debian terminal. This is a fully-featured terminal emulator, with customization, addon capabilities, and more.\nWinLine will never connect to the internet unless you direct it to, and your data will never leave your device. In addition, your terminal history is immediately erased after closing the window, making sure your commands are never read." + RESET)
@@ -939,7 +939,7 @@ def main():
 
             # Reset the terminal
             elif (command == "reset-term"):
-                print(RED + "\nWARNING: resetting WinLine data will delete all preferences and data. This action CANNOT be undone. This will also erase all components!" + RESET)
+                print(RED + "\nWARNING: resetting WinLine data will delete all preferences and data. This will also erase all components! This action CANNOT be undone." + RESET)
                 cont = input("Do you want to continue? [Y/N] > " + RESET).capitalize()
 
                 if cont == "Y":
@@ -1786,7 +1786,8 @@ def main():
                 while keepTrying == True:
                     try:
                         chanfile = open(DATAPATH + "/channel", "r")
-                        CHANNEL = chanfile.read()
+                        channel = chanfile.read()
+                        CHANNEL = channel if channel in VALID_CHANNELS else "stable"
                         chanfile.close()
 
                         if CHANNEL == "stable":
@@ -1807,6 +1808,7 @@ def main():
                 if okay:
                     if (server_version != VERSION_ID):
                         print(YELLOW + "You are currently using WinLine " + SEAFOAM + Appversion + YELLOW + ", and version " + SEAFOAM + server_version + YELLOW + " is available" + RESET)
+                        print(DEV_COLOR + "The update will be pulled from the " + SPECIALDRIVE + CHANNEL + DEV_COLOR + " channel")
                         cinst = input(BLUE + "Do you want to update? [Y/N] > " + RESET).capitalize()
 
                         if cinst == "Y":
