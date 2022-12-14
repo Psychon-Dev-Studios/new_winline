@@ -1,7 +1,7 @@
 ## For those curious, the main function starts waaaaay down near line 430 (might be further or closer, who knows. We modify the start of this file a LOT)
 
-VERSION_ID = "3.9" # Current WinLine version. Should be in format MAJOR.MINOR
-PATCH_ID = 7 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
+VERSION_ID = "3.11" # Current WinLine version. Should be in format MAJOR.MINOR
+PATCH_ID = 0 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
 SVRMODE = 0 # Set to 1 to switch to a locally-served server on port 80
 
 # Components
@@ -43,7 +43,7 @@ KEY_DEVMODE = "UNSTABLE %s"%VERSION_ID
 KEY_BETA = "GIT_BETA"
 KEY_DISTMODE = "GIT_STABLE"
 
-# These file types will not auto-launch no matter what
+# These file types will not auto-launch no matter what, as these tend to be dangerous
 BANNED_FILETYPES = ['bat', 'bin', 'cmd', 'com', 'cpl', 'exe', 'gadget', 'inf1', 'ins', 'inx', 'isu', 'job', 'jse', 'msc', 'lnk', 'msi', 'msp', 'mst', 'paf', 'pif', 'ps1', 'reg', 'rgs', 'scr', 'sct', 'shb', 'shs', 'u3p', 'vb', 'vbe', 'vbs', 'vbscript', 'ws', 'wsf', 'wsh', 'cab', 'ex_', '_ex', 'ex', 'isu', 'otm', 'potm', 'ppam', 'ppsm', 'pptm', 'udf', 'upx', 'url', 'wcm', 'xap', 'xlsm', 'xltm', '']
 
 # 0 = OUR website, 1 = LOCALLY HOSTED website
@@ -169,7 +169,7 @@ THREADED_AV_CHECK = "threaded_mw_protection: true"
 USE_SAFE_MODE = "safe_mode: true"
 # End config names
 
-# If on Linux, rename the terminal. This also configures osext
+# If not on Linux, rename the terminal. This also configures osext
 try:
     if os.name == "nt" and os.path.isfile(DATAPATH + "/config"):
         if not (EMULATE_LINUX in config):NON_WIN = False;osext="";CLEAR_COMMAND="cls"
@@ -191,7 +191,7 @@ else:
 
 # Warn the user if the current OS is not Windows
 if NON_WIN:
-    print(RED + "\nThis instance of WinLine is running on a non-Windows operating system. Some features are unavailable, and some commands may not work correctly." + RESET)
+    print(RED + "\nThis instance of WinLine is running on a non-Windows operating system" + RESET)
     # print(RED + "Configuration is only available on Windows. Some advanced features are unavailable" + RESET)
 
 print("")
@@ -1169,10 +1169,13 @@ def main():
 
                                     if (whatToLoad in enabled_components) and not whatToLoad in ignore_load_status: # Find the specified component and move it to /components
                                         try:
-                                            shutil.move(DATAPATH + "/components/unloaded/%s.py"%whatToLoad, DATAPATH + "/components/%s.py"%whatToLoad)
-                                            try:loaded_components.append(whatToLoad)
-                                            except:NotImplemented
-                                            print(DRIVES + "Component loaded" + RESET)
+                                            if os.path.isfile(DATAPATH + "/components/unloaded/%s.py"%whatToLoad):
+                                                shutil.move(DATAPATH + "/components/unloaded/%s.py"%whatToLoad, DATAPATH + "/components/%s.py"%whatToLoad)
+                                                try:loaded_components.append(whatToLoad)
+                                                except:NotImplemented
+                                                print(DRIVES + "Component loaded" + RESET)
+                                            else:
+                                                print(RED + "That component is either disabled or doesn't exist. Check your spelling and try again" + RESET)
                                         except:
                                             print(RED + "Unable to load component" + RESET)
 
@@ -1182,6 +1185,9 @@ def main():
                                     
                                     elif (whatToLoad in loaded_components):
                                         print(YELLOW + "Component is already loaded" + RESET)
+
+                                    elif os.path.isfile(DATAPATH + "/components/disabled/%s.py"%whatToLoad):
+                                        print(YELLOW + "That component is disabled")
 
                                     else:
                                         print(RED + "Component can't be loaded" + RESET)
@@ -1198,7 +1204,7 @@ def main():
                                             print(DRIVES + "Component %s loaded"%gotten + RESET)
                                             time.sleep(0.1)
                                         except:
-                                            print(RED + "Unable to unload component" + RESET)
+                                            print(RED + "Unable to unload component %s"%gotten + RESET)
                             else: print(RED + "Components have been disallowed from the configuration file" + RESET)
 
                         elif "--help" in flags or "-h" in flags:
@@ -1210,12 +1216,17 @@ def main():
                             if not whatToDisable in open(DATAPATH + "/development_components.txt").read():
                                 try: # Move the component from the unloaded folder to /components/disabled
                                     # Prevents the component from being accidentally loaded
-                                    shutil.move(DATAPATH + "/components/unloaded/%s.py"%whatToDisable, DATAPATH + "/components/disabled/%s.py"%whatToDisable)
+                                    if os.path.isfile(DATAPATH + "/components/unloaded/%s.py"%whatToDisable):
+                                        shutil.move(DATAPATH + "/components/unloaded/%s.py"%whatToDisable, DATAPATH + "/components/disabled/%s.py"%whatToDisable)
+                                    else:
+                                        shutil.move(DATAPATH + "/components/%s.py"%whatToDisable, DATAPATH + "/components/disabled/%s.py"%whatToDisable)
                                     try:
                                         enabled_components.remove(whatToDisable)
                                         loaded_components.remove(whatToDisable)
-                                    except:NotImplemented
+                                    except Exception as err:print(str(err))
                                     print(DRIVES + "Component disabled" + RESET)
+                                except FileNotFoundError:
+                                    print(RED + "That component is either already disabled or doesn't exist. Check your spelling and try again" + RESET)
                                 except:
                                     print(RED + "Unable to disable the component" + RESET)
                             else:
@@ -1275,7 +1286,7 @@ def main():
                                 print(RED + "Component not found" + RESET)
 
                             else:
-                                print(RED + "The component is still loaded and cannot be purged. Please run " + BLUE + "components --disable %s"%whatToPurge + RESET)
+                                print(RED + "The component is still loaded and cannot be purged. Please run " + BLUE + "components --disable %s"%whatToPurge + RED + RESET)
 
                         elif "--install" in flags:
                                 try:
@@ -1926,6 +1937,22 @@ def main():
 
             ### **************************************************************************** ###
 
+            # Command to list details about the specified wifi network, as long as it has been connected to before
+            elif "wifi_info" in command:
+                try: network = command.split(maxsplit=1)[1]
+                except:network = None
+
+                if network != None and not NON_WIN:
+                    print(YELLOW + "Attempting to get wifi network info..." + RESET)
+                    os.system("netsh wlan show profile name=%s key=clear"%network)
+                    # print(YELLOW + "Your wifi password should be shown under Security Settings > Key Content" + RESET)
+                elif NON_WIN:
+                    print(RED + "This command is only available on Windows" + RESET)
+                else:
+                    print('Wifi network not specified. Example: "wifi_info MyWifi" or "wifi_info \'My Wifi\'"')
+
+            ### **************************************************************************** ###
+
             else:
                 if True:#not (NON_WIN)
                     addin_commands = []
@@ -1969,7 +1996,7 @@ def main():
                             print(RED + "SysRun Error: " + str(err) + RESET + "\n")
                     
                     else:
-                        print(RED + "This is not an internal command. Safe mode is preventing SysRun from executing this command" + RESET + "\n")
+                        print(RED + "This is not an internal command and safe mode is preventing SysRun from executing this command" + RESET + "\n")
  
 
         except KeyboardInterrupt:
