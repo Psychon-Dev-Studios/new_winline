@@ -36,21 +36,21 @@ The terminal emulates a lxterm-like environment, sutable for users familiar with
 ## VERSION SUPPORT:
 This table provides information about which versions on WinLine we will actively provide support for
 
-|Version|Support|
-|-------|-------|
-|3.0|**None**|
-|3.1|**None**|
-|3.2|**None**|
-|3.2.1|**None**|
-|3.3|**None**|
-|3.3.1|**None**|
-|3.4|**None**|
-|3.5|**None**|
-|3.6|**Updates only**|
-|3.7|**None**|
-|3.7.1|**None**|
-|3.7.2|**None**|
-|3.7.4|**Updates only**|
-|3.9.7|**Full**|
-|3.9.8|**Full**|
-|3.11|**Full**|
+|Version|Support|End of Life|
+|-------|-------|-------|
+|3.0|**None**|1/3/23|
+|3.1|**None**|1/3/23|
+|3.2|**None**|1/3/23|
+|3.2.1|**None**|1/3/23|
+|3.3|**None**|2/3/23|
+|3.3.1|**None**|2/3/23|
+|3.4|**None**|2/3/23|
+|3.5|**None**|2/3/23|
+|3.6|**None**|2/3/23|
+|3.7|**None**|4/19/23|
+|3.7.1|**None**|4/19/23|
+|3.7.2|**None**|6/15/23|
+|3.7.4|**Updates only**|6/15/23|
+|3.9.7|**Full**|6/15/23|
+|3.9.8|**Full**|6/15/23|
+|3.11|**Full**|6/15/23|
