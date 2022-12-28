@@ -34,23 +34,24 @@ The terminal emulates a lxterm-like environment, sutable for users familiar with
 * Components & Discussions: https://github.com/Psychon-Dev-Studios/new_winline/discussions
 
 ## VERSION SUPPORT:
-This table provides information about which versions on WinLine we will actively provide support for
+This table provides information about which versions on WinLine we will actively provide support for.\
+**Policy**: We will provide active support for the last 4 updates, with the oldest being for upgrading only. Each version of WinLine will reach End of Life and be pulled from our servers 3 months after their release
 
 |Version|Support|End of Life|
 |-------|-------|-------|
-|3.0|**None**|1/3/23|
-|3.1|**None**|1/3/23|
-|3.2|**None**|1/3/23|
-|3.2.1|**None**|1/3/23|
-|3.3|**None**|2/3/23|
-|3.3.1|**None**|2/3/23|
-|3.4|**None**|2/3/23|
-|3.5|**None**|2/3/23|
-|3.6|**None**|2/3/23|
-|3.7|**None**|4/19/23|
-|3.7.1|**None**|4/19/23|
-|3.7.2|**None**|6/15/23|
-|3.7.4|**Updates only**|6/15/23|
-|3.9.7|**Full**|6/15/23|
-|3.9.8|**Full**|6/15/23|
-|3.11|**Full**|6/15/23|
+|3.0|**None**|12/9/22|
+|3.1|**None**|12/9/22|
+|3.2|**None**|12/9/22|
+|3.2.1|**None**|1/9/23|
+|3.3|**None**|1/9/23|
+|3.3.1|**None**|1/9/23|
+|3.4|**None**|1/27/23|
+|3.5|**None**|2/7/23|
+|3.6|**None**|2/9/23|
+|3.7|**None**|2/13/23|
+|3.7.1|**None**|2/21/23|
+|3.7.2|**None**|2/21/23|
+|3.7.4|**Updates only**|2/21/23|
+|3.9.7|**Full**|3/10/23|
+|3.9.8|**Full**|3/10/23|
+|3.11|**Full**|3/27/23|
