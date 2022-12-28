@@ -35,7 +35,7 @@ The terminal emulates a lxterm-like environment, sutable for users familiar with
 
 ## VERSION SUPPORT:
 This table provides information about which versions on WinLine we will actively provide support for.\
-**Policy**: We will provide active support for the last 4 updates, with the oldest being for upgrading only. Each version of WinLine will reach End of Life and be pulled from our servers 3 months after their release
+**Policy**: We will provide active support for the last 4 updates, with the oldest being for upgrading only. Each version of WinLine will reach End of Life 3 months after their release.
 
 |Version|Support|End of Life|
 |-------|-------|-------|
