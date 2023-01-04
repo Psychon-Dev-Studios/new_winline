@@ -51,7 +51,9 @@ This table provides information about which versions on WinLine we will actively
 |3.7|**None**|2/13/23|
 |3.7.1|**None**|2/21/23|
 |3.7.2|**None**|2/21/23|
-|3.7.4|**Updates only**|2/21/23|
-|3.9.7|**Full**|3/10/23|
+|3.7.4|**None**|2/21/23|
+|3.9.7|**None**|3/10/23|
 |3.9.8|**Full**|3/10/23|
 |3.11|**Full**|3/27/23|
+|3.11.1|**Full**|4/4/23|
+|3.12|**Full**|~~4/4/23~~|
