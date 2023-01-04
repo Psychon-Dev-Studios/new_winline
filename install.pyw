@@ -93,10 +93,13 @@ def installWinLine():
         with ZipFile(sys.path[0] + "/winline.dat") as data:
             if not core_only:
                 data.extractall(WINDRIVE + ":/ProgramData/winLine")
+                try:data.extract("terminal.ico", WINDRIVE + ":/ProgramData/winLine")
+                except:NotImplemented
                 data.close()
             else:
                 data.extract("terminal.py", WINDRIVE + ":/ProgramData/winLine")
                 data.extract("utilities.py", WINDRIVE + ":/ProgramData/winLine")
+                data.extract("terminal.ico", WINDRIVE + ":/ProgramData/winLine")
 
     except:
         print(RED + "\nError: winline.dat could not be opened. The file may be corrupted.")

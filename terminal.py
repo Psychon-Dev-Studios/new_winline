@@ -1,7 +1,7 @@
 ## For those curious, the main function starts waaaaay down near line 430 (might be further or closer, who knows. We modify the start of this file a LOT)
 
 VERSION_ID = "3.11" # Current WinLine version. Should be in format MAJOR.MINOR
-PATCH_ID = 0 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
+PATCH_ID = 1 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
 SVRMODE = 0 # Set to 1 to switch to a locally-served server on port 80
 
 # Components
@@ -364,7 +364,7 @@ if (SHOW_NAME in config): #not (NON_WIN) and
             if not ISDEV:
                 print(YELLOW + "Welcome back, " + open(DATAPATH+"/owner_name", "r").read() + "!" + RESET)
             else:
-                print(DEV_COMPONENT + "Welcome back, " + open(DATAPATH+"/owner_name", "r").read() + "! You're in developer mode." + RESET)
+                print(DEV_COMPONENT + "Welcome back, " + open(DATAPATH+"/owner_name", "r").read() + "!" + RESET)
         else:
             locprefix = RED + "Local User" + BLUE + "~ " + RESET
             print(RED + "Welcome, Local User!" + RESET)
@@ -1037,7 +1037,9 @@ def main():
                             swapPercentage = str(utilities.colorCpuUsage("", psutil.swap_memory().percent,RED, YELLOW, SPECIALDRIVE, RESET))
                             swapUsage = str(utilities.colorRamUsage(psutil.swap_memory().used/(1024.0 ** 3),psutil.swap_memory().total/(1024.0 ** 3),RED, YELLOW, SPECIALDRIVE, RESET))
                             battery = psutil.sensors_battery()
-                            batteryCharge = str(utilities.colorBatteryPercentage(int(battery.percent), battery, RED, YELLOW, SPECIALDRIVE, BLUE, CRITICAL_BATTERY, RESET))
+                            if str(battery.percent) != "100":
+                                batteryCharge = str(utilities.colorBatteryPercentage(int(battery.percent), battery, RED, YELLOW, SPECIALDRIVE, BLUE, CRITICAL_BATTERY, RESET))
+                            else:batteryCharge = str(BLUE + "Full" + RESET)
 
                             try:
                                 net_stat = str(psutil.net_if_stats().get("Wi-Fi").isup)
