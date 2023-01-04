@@ -39,9 +39,9 @@ This table provides information about which versions on WinLine we will actively
 
 |Version|Support|End of Life|
 |-------|-------|-------|
-|3.0|``javascript // EOL``|12/9/22|
-|3.1|***EOL***|12/9/22|
-|3.2|***EOL***|12/9/22|
+|~~3.0|**_EOL_**|12/9/22~~|
+|~~3.1|***EOL***|12/9/22~~|
+|~~3.2|***EOL***|12/9/22~~|
 |3.2.1|**None**|1/9/23|
 |3.3|**None**|1/9/23|
 |3.3.1|**None**|1/9/23|
