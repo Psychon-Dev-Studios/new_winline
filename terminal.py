@@ -1,7 +1,7 @@
 ## For those curious, the main function starts waaaaay down near line 430 (might be further or closer, who knows. We modify the start of this file a LOT)
 
-VERSION_ID = "3.11" # Current WinLine version. Should be in format MAJOR.MINOR
-PATCH_ID = 1 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
+VERSION_ID = "3.13" # Current WinLine version. Should be in format MAJOR.MINOR
+PATCH_ID = 0 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
 SVRMODE = 0 # Set to 1 to switch to a locally-served server on port 80
 
 # Components
@@ -38,6 +38,7 @@ class error_general():
 # End error codes
 
 # Key Version Info
+OLD_VERSIONS = ['3.0', '3.1', '3.2', '3.2.1' '3.3', '3.3.1', '3.4', '3.5', '3.6', '3.7', '3.7.1', '3.7.2', '3.7.4', '3.9.7', '3.9.8', '3.11', '3.11.1']
 VALID_CHANNELS = ["stable", "beta"]
 KEY_DEVMODE = "UNSTABLE %s"%VERSION_ID
 KEY_BETA = "GIT_BETA"
@@ -46,11 +47,61 @@ KEY_DISTMODE = "GIT_STABLE"
 # These file types will not auto-launch no matter what, as these tend to be dangerous
 BANNED_FILETYPES = ['bat', 'bin', 'cmd', 'com', 'cpl', 'exe', 'gadget', 'inf1', 'ins', 'inx', 'isu', 'job', 'jse', 'msc', 'lnk', 'msi', 'msp', 'mst', 'paf', 'pif', 'ps1', 'reg', 'rgs', 'scr', 'sct', 'shb', 'shs', 'u3p', 'vb', 'vbe', 'vbs', 'vbscript', 'ws', 'wsf', 'wsh', 'cab', 'ex_', '_ex', 'ex', 'isu', 'otm', 'potm', 'ppam', 'ppsm', 'pptm', 'udf', 'upx', 'url', 'wcm', 'xap', 'xlsm', 'xltm', '']
 
-# 0 = OUR website, 1 = LOCALLY HOSTED website
-if SVRMODE == 0:
-    REMOTE_SERVER = "https://psychon-dev-studios.github.io/nwl_stirehost" # Our server
+# Code to initialze and import the configuration file #
+try:
+    import sys
+    from importlib.util import spec_from_loader, module_from_spec
+    from importlib.machinery import SourceFileLoader
+
+    spec = spec_from_loader("config", SourceFileLoader("winline", sys.path[0] + "/winline.config"))
+    sets = module_from_spec(spec);spec.loader.exec_module(sets)
+    sys.modules['config'] = sets # Load the config file as a python module, letting us use the settings inside as variables
+
+    from config import winConfig
+
+except:
+    # Internal defaults of the config file, in case it cannot be found
+    WINCF_FLATSTRING = """class winConfig():
+    # Classic configuration options #
+    KEYBOARD_INTURRUPT_ENABLED = False # Whether to allow Ctrl+C to exit WinLine or not
+    CMDLINK = False # Whether to enable the "cmd" command or not. Depricated.
+    ADVANCED_MODE = False # Whether to enable more advanced features or not
+    RUN_FAILED_COMMANDS_SYSTEM = False # Whether to run failed commands on the system or not ("SysRun")
+    ENABLE_COMPONENTS = True # Enables or disables components outright
+    EMULATE_LINUX = False # Enables Linux emulation on Windows systems for testing purposes
+    WIN_DISPLAY_UNAME = True # Allows WinLine to show your chosen username before commands on Windows
+    HARD_RESET_UPON_ERROR = False # Enables the hard reset action upon a fatal error
+    ENABLE_MALWARE_PROTECTION = True # Enables protection against malicious components
+    MALWARE_PROC_USE_THREAD = True # Runs malware protection in a seperate thread if enabled, reducing startup time
+    SAFE_MODE = False # Whether safe mode is enabled or not. When enabled, most configuration options are overriden
+
+    # Network configuration options #
+    ALLOW_NETWORK_CONNECTIONS = True # Set to false to prevent WinLine from connecting to any server
+    SERVER_URL = "https://psychon-dev-studios.github.io/nwl_stirehost" # The URL WinLine will connect to in order to update and for other resources"""
+
+    class winConfig():
+        # Classic configuration options #
+        KEYBOARD_INTURRUPT_ENABLED = False
+        CMDLINK = False
+        ADVANCED_MODE = False
+        RUN_FAILED_COMMANDS_SYSTEM = False
+        ENABLE_COMPONENTS = True
+        EMULATE_LINUX = False
+        WIN_DISPLAY_UNAME = True
+        HARD_RESET_UPON_ERROR = False
+        ENABLE_MALWARE_PROTECTION = True
+        MALWARE_PROC_USE_THREAD = True
+        SAFE_MODE = False
+
+        # Additional configuration options #
+        ALLOW_NETWORK_CONNECTIONS = True # Set to false to prevent WinLine from connecting to any server
+        SERVER_URL = "https://psychon-dev-studios.github.io/nwl_stirehost"
+
+
+if winConfig.ALLOW_NETWORK_CONNECTIONS:
+    REMOTE_SERVER = winConfig.SERVER_URL
 else:
-    REMOTE_SERVER = "http://localhost:80" # A locally-hosted site
+    REMOTE_SERVER = "!DISABLED"
 
 # Import handlers
 try:
@@ -66,8 +117,8 @@ try:
     try:
         import utilities
     except:
-        print("Warning: utility package failed to import. The 'monitor' command will not work")
-        time.sleep(5)
+        print("Warning: utility package failed to import")
+        time.sleep(2)
 
 # Something failed, import the bare essentials and warn the user about the error
 except Exception as err:
@@ -78,6 +129,8 @@ except Exception as err:
         from zipfile import ZipFile
     except:
         NotImplemented
+        # Something went catastrophically wrong #
+        print("CATASTROPHIC FAILURE: ALL MODULES FAILED TO IMPORT")
     print("Warning: Some modules failed to load. Some features will not work correctly")
     print("WinLine will continue startup momentarily")
     # time.sleep(999)
@@ -131,7 +184,7 @@ DEV_COLOR = "\u001b[1;38;5;201m"
 
 # Function to test all colors #
 def colorCycle():
-    FULL_COLOR_CYCLE = BLUE + "Blue\n" + DRIVES + "Drives\n" + SPECIALDRIVE + "Windows Drive / Green\n" + SEAFOAM + "Seafoam\n" + RED + "Red / Error\n" + MAGENTA + "Magenta\n" + DULLYELLOW + "Dull Yellow\n" + YELLOW + "Yellow\n" + RESET + "Default\n" + CRITICAL_BATTERY + "Battery Critical\n" + DEV_COMPONENT + "Developer Component\n" + DEV_COLOR + "Developer Info\n" + RESET+UNRECOGNIZED_COMMAND + "Unknown commands\n"
+    FULL_COLOR_CYCLE = BLUE + "Blue\n" + DRIVES + "Drives\n" + SPECIALDRIVE + "Windows Drive / Green\n" + SEAFOAM + "Seafoam\n" + RED + "Red / Error\n" + MAGENTA + "Magenta\n" + DULLYELLOW + "Dull Yellow\n" + YELLOW + "Yellow\n" + RESET + "Default\n" + CRITICAL_BATTERY + "Battery Critical\n" + DEV_COMPONENT + "Developer Component\n" + DEV_COLOR + "Developer Info\n"+UNRECOGNIZED_COMMAND + "Unknown commands\n"+RESET
 
     print(FULL_COLOR_CYCLE+RESET)
 
@@ -149,30 +202,10 @@ except:
     try:DATAPATH = "/home/%s/.winline"%os.getlogin()
     except:DATAPATH = ""
 
-# config
-try:
-    config = open(DATAPATH + "/config", "r").read() # The file that the config is stored in
-except:
-    NotImplemented
-
-# Config name files
-ENABLEKEYBOARDINTURRUPT = "keyboardInturruptEnabled: true"
-CMDLINK = "cmdLink: enabled"
-ADVANCEDMODE = "advancedMode: enabled"
-SYSRUN_FAILED_COMMANDS = "sysrun_failed_commands: true"
-ALLOW_COMPONENTS = "allow_components: true"
-EMULATE_LINUX = "emulate_linux: true"
-SHOW_NAME = "display_username_win: true"
-RESET_ON_ERROR = "prefer_reset_on_error: true"
-ENABLE_AV_CHECK = "enable_malware_protection: true"
-THREADED_AV_CHECK = "threaded_mw_protection: true"
-USE_SAFE_MODE = "safe_mode: true"
-# End config names
-
 # If not on Linux, rename the terminal. This also configures osext
 try:
     if os.name == "nt" and os.path.isfile(DATAPATH + "/config"):
-        if not (EMULATE_LINUX in config):NON_WIN = False;osext="";CLEAR_COMMAND="cls"
+        if (winConfig.EMULATE_LINUX == False):NON_WIN = False;osext="";CLEAR_COMMAND="cls"
         else:NON_WIN = True;osext=" (Linux Emulation)";CLEAR_COMMAND="clear"
     elif not os.path.isfile(DATAPATH + "/config"):
         NON_WIN = False;osext="";CLEAR_COMMAND="clear"
@@ -238,7 +271,7 @@ def get_drives():
 def doConfig():
     global config
     if True: # Relic of os-based feature selection. This has since been removed, but we haven't fixed indents yet
-        if not (os.path.isfile(DATAPATH + "/config")) or (open(DATAPATH + "/config", "r").read() == ""):
+        if not (os.path.isfile(DATAPATH + "/winline.config")) or (open(DATAPATH + "/winline.config", "r").read() == ""):
             sleep(0.75)
             print(DULLYELLOW + "Welcome to WinLine!")
             print(BLUE + "Please wait for automatic setup to finish..." + RESET)
@@ -260,19 +293,8 @@ def doConfig():
             
             # Try to write the base config contents
             try:
-                open(DATAPATH + "/config", "x")
-                file = open(DATAPATH + "/config", "a")
-                file.write("keyboardInturruptEnabled: true")
-                file.write("\ncmdLink: disabled")
-                file.write("\nadvancedMode: disabled")
-                file.write("\nsysrun_failed_commands: false")
-                file.write("\nallow_components: true")
-                file.write("\nemulate_linux: false")
-                file.write("\ndisplay_username_win: true")
-                file.write("\nprefer_reset_on_error: false")
-                file.write("\nenable_malware_protection: true")
-                file.write("\nthreaded_mw_protection: true")
-                file.write("\nsafe_mode: false")
+                file = open(DATAPATH + "/winline.config", "a")
+                file.write(WINCF_FLATSTRING)
                 file.close()
 
             except:NotImplemented
@@ -300,7 +322,7 @@ def doConfig():
             sleep(1)
             print(DULLYELLOW + "To get started, use " + BLUE + "help " + DULLYELLOW + "to list supported commands.\n\n" + RESET)
 
-            config = open(DATAPATH + "/config", "r").read()
+            config = open(DATAPATH + "/winline.config", "r").read()
 
         # Component-related directory creation. This is here to prevent issues with bare installations
         if not os.path.isdir(DATAPATH + "/components"):
@@ -348,16 +370,30 @@ def doConfig():
                 file.write(uname)
                 file.close()
 
+        # If upgrading past 3.11, this code should execute to move to the new configuration scheme
+        if not os.path.isfile(DATAPATH + "/winline.config"):
+            if os.path.isfile(DATAPATH + "/config"): OLD_CONF_EXISTS = True
+            else: OLD_CONF_EXISTS = False
+
+            if OLD_CONF_EXISTS: print(BLUE + "Please wait, WinLine needs to migrate to the new configuration file. This should only take a moment");os.remove(DATAPATH + "/config")
+            file = open(DATAPATH + "/winline.config", "a")
+            file.write(WINCF_FLATSTRING)
+            file.close()
+
+            print(YELLOW + "Notice: your configuration changes have been reset. You can find the new configuration file here: " + BLUE + DATAPATH + "/winline.config" + RESET)
+            time.sleep(5)
+
     else:
         # Config parameters to use while using a non-Windows system
         config = "allow_components: true\nkeyboardInturruptEnabled: true\nadvancedMode: enabled\nsysrun_failed_commands: enabled\n"
 
 # Run configuration
 #if not NON_WIN: doConfig()
-doConfig()
+try:doConfig()
+except:print(RED + "CATASTROPHIC FAILURE: UNABLE TO RUN SETUP");config="safe_mode: true"
 
 # Print a nice welcome message
-if (SHOW_NAME in config): #not (NON_WIN) and 
+if (winConfig.WIN_DISPLAY_UNAME): #not (NON_WIN) and 
     try:
         if os.path.isfile(DATAPATH + "/owner_name"):
             locprefix = MAGENTA + open(DATAPATH+"/owner_name", "r").read() + BLUE + "~ " + RESET
@@ -372,8 +408,8 @@ if (SHOW_NAME in config): #not (NON_WIN) and
         NotImplemented
 
 # Load components and populate lists
-if not (USE_SAFE_MODE in config):
-    if (ALLOW_COMPONENTS in config):
+if not (winConfig.SAFE_MODE):
+    if (winConfig.ENABLE_COMPONENTS):
         if True: #not NON_WIN
             try:
                 for add_on in os.listdir(DATAPATH + "/components/"):
@@ -388,7 +424,9 @@ if not (USE_SAFE_MODE in config):
             except:NotImplemented
     else:loaded_components=[];print(RED + "Components have been disabled from the config file" + RESET);os.system("title WinLine %s (components disabled)"%Appversion)
 else:
-    print(YELLOW + "Safe mode is active" + RESET);os.system("title WinLine %s (safe mode)"%Appversion)
+    try:
+        print(YELLOW + "Safe mode is active" + RESET);os.system("title WinLine %s (safe mode)"%Appversion)
+    except:print(RED + "Multiple catastrophic failures have occurred. Safe mode has activated to restore partial functionality" + RESET)
 
 # Code to check for dangerous componenets
 def checkForDangerousComponents():
@@ -401,7 +439,7 @@ def checkForDangerousComponents():
     except Exception as err:
         unsafe_components = DANGEROUS_ADDONS_BUILTIN
         verified_components = ""
-        if not THREADED_AV_CHECK in config:
+        if not winConfig.MALWARE_PROC_USE_THREAD:
             print(RED + "WARNING: Unable to reach A/V server. Built-in A/V may not be fully effective!\n" + YELLOW + "Error " + error_general.server_unreachable + RESET)
 
     try:
@@ -425,7 +463,7 @@ def checkForDangerousComponents():
                 NotImplemented
 
     if dangerousCount != 0:
-        if not THREADED_AV_CHECK in config:
+        if not winConfig.MALWARE_PROC_USE_THREAD:
             print(RED + "%s dangerous components were found and have been disabled\n"%dangerousCount + YELLOW + "Warning " + error_general.dangerous_comps + RESET)
         else:
             print(RED + "\n Warning " + error_general.dangerous_comps + "\n> " + RESET)
@@ -454,13 +492,13 @@ def main():
                 print(SPECIALDRIVE + "cmd: directly interface with Windows' command line. Use ctrl+c or type 'exit' to return to WinLine\npowershell: switch the current WinLine instance to a Powershell terminal. Use 'exit' to return to WinLine" + RESET)
 
 
-                if (ADVANCEDMODE in config):
+                if (winConfig.ADVANCED_MODE):
                     print(SPECIALDRIVE + "\nAdvanced commands: 'reset-term', 'sysrun'")
                     # print("For more info, warnings, and usage examples, use " + RED + "man secretCommands" + RESET)
 
                 if len(loaded_components) != 0:
                     print(YELLOW + "\nAddon components have added additional commands. Use the " + BLUE + "components " + YELLOW + "command to list them" + RESET)
-                elif not (ALLOW_COMPONENTS in config):
+                elif not (winConfig.ADVANCED_MODE):
                     print(RED + "\nWARNING: Components have been disabled from the config file. Additional features, including component management, are disabled" + RESET)
                 
 
@@ -787,8 +825,8 @@ def main():
                 print(BLUE + "Version: " + MAGENTA + Appversion)
                 print(BLUE + "Channel: " + MAGENTA + chan)
                 try:
-                    advmd = "ENABLED" if ADVANCEDMODE in config else "DISABLED"
-                    cpn = "ENABLED" if ALLOW_COMPONENTS in config else "DISABLED"
+                    advmd = "ENABLED" if winConfig.ADVANCED_MODE else "DISABLED"
+                    cpn = "ENABLED" if winConfig.ENABLE_COMPONENTS else "DISABLED"
                 except:advmd="?";cpn="?"
                 if (NON_WIN):cpn="ENABLED (LINUX MODE)"
                 print(BLUE + "Advanced mode: " + MAGENTA + advmd)
@@ -848,7 +886,7 @@ def main():
 
             # Immediately run a command on the system itself, bypassing WinLine
             elif (command.split(maxsplit=1)[0] == "sysrun"):
-                if not (USE_SAFE_MODE in config):
+                if not (winConfig.SAFE_MODE):
                     try:
                         os.system(command.split(maxsplit=1)[1])
                     except KeyboardInterrupt:
@@ -1014,7 +1052,7 @@ def main():
             # Boot into a simple system monitor utility
             # Requires utilities.py to function
             elif command == "monitor":
-                if not (USE_SAFE_MODE in config):
+                if not (winConfig.SAFE_MODE):
                     try:
                         sys.stdout.write(u"\x1b[?25l")
                         cached_battery = "okay"
@@ -1124,8 +1162,8 @@ def main():
             elif ("components" in command or "component" in command or "addons" in command):
                 # if NON_WIN:print(RED + "Warning: Components are not supported on non-Windows systems")
                 if NON_WIN:print(RED + "Components might not function correctly on this system. Please be sure to report any bugs you encounter!" + RESET)
-                if not (ALLOW_COMPONENTS in config):print(RED + "Warning: Components have been disallowed from the configuration file\n\n" + RESET)
-                if not (USE_SAFE_MODE in config):
+                if not (winConfig.ENABLE_COMPONENTS):print(RED + "Warning: Components have been disallowed from the configuration file\n\n" + RESET)
+                if not (winConfig.SAFE_MODE):
                     try:
                         try:flags = command.split(maxsplit=1)[1] # Get the requested subcommand
                         except: flags = "" # No request
@@ -1164,7 +1202,7 @@ def main():
                                 else:print(RED + "Component can't be loaded because it's not enabled. Restart WinLine to enable it" + RESET)
 
                         elif "--load" in flags:
-                            if (ALLOW_COMPONENTS in config):
+                            if (winConfig.ENABLE_COMPONENTS):
                                 try:
                                     whatToLoad = command.split(maxsplit=2)[2] # Get the component name
                                     ignore_load_status = open(DATAPATH + "/development_components.txt").read() # What commands to skip over
@@ -1235,7 +1273,7 @@ def main():
                                 print(DEV_COMPONENT + "Developer components can't be disabled" + RESET)
 
                         elif "--enable" in flags:
-                            if (ALLOW_COMPONENTS in config):
+                            if (winConfig.ENABLE_COMPONENTS):
                                 whatToEnable = command.split(maxsplit=2)[2] # Get the component name
                                 if not whatToEnable in open(DATAPATH + "/development_components.txt").read():
                                     if not (whatToEnable in found_dangerous):
@@ -1479,7 +1517,7 @@ def main():
                                             elif(component.split(".", 1)[0] in loaded_components and component.split(".", 1)[0] in enabled_components):load_string=SPECIALDRIVE+"(loaded)";colorToUse=BLUE
                                             elif(component.split(".", 1)[0] in disabled):load_string=RED + "(disabled)";colorToUse=DRIVES
                                             elif(component.split(".", 1)[0] in enabled_components):load_string="(unloaded)";colorToUse=DRIVES
-                                            elif not (ALLOW_COMPONENTS in config):load_string=(RED + "(blacklisted)" + RESET);colorToUse=RED
+                                            elif not (winConfig.ENABLE_COMPONENTS):load_string=(RED + "(blacklisted)" + RESET);colorToUse=RED
                                             elif not (os.path.isfile(DATAPATH + "/components/%s"%component)):load_string=RED+"(unsupported format)";colorToUse=DRIVES
                                             else:load_string=RED+"(restart WinLine to enable)";colorToUse=DRIVES
 
@@ -1523,11 +1561,11 @@ def main():
             elif (command == "config"):
                 if not NON_WIN:
                     print(YELLOW + "Please select 'Notepad' or another text editor to open the file" + RESET)
-                    os.startfile(DRIVELETTER + ":/ProgramData/winLine/config")
+                    os.startfile(DRIVELETTER + ":/ProgramData/winLine/winline.config")
                 else:
                     # print(RED + "Configuration cannot be modified on non-Windows systems" + RESET)
                     print(YELLOW + "Attempting to open the config file in NANO" + RESET)
-                    os.system("nano /home/%s/.winline/config"%os.getlogin())
+                    os.system("nano /home/%s/.winline/winline.config"%os.getlogin())
 
             ### **************************************************************************** ###
             
@@ -1547,10 +1585,12 @@ def main():
                         newName = command.split(" ", maxsplit=1)[1]
 
                         file = open(DATAPATH+"/owner_name", "w")
+                        file.truncate(0)
                         file.write(newName)
+                        time.sleep(0.1)
                         file.close()
 
-                        if (SHOW_NAME in config):
+                        if (winConfig.WIN_DISPLAY_UNAME):
                             locprefix = MAGENTA + open(DATAPATH+"/owner_name", "r").read() + BLUE + "~ " + RESET
                             print(YELLOW + "Welcome back, " + open(DATAPATH+"/owner_name", "r").read() + "!" + RESET)
                         else:
@@ -1625,7 +1665,7 @@ def main():
                 except:
                     print(SPECIALDRIVE + KEY_DISTMODE + RESET)
 
-                if (USE_SAFE_MODE in config):
+                if (winConfig.SAFE_MODE):
                     print(YELLOW + "WL Safe Mode" + RESET)
                 print("")
             
@@ -1644,7 +1684,7 @@ def main():
 
                 if allow == "Y":
                     print(YELLOW + "Updating configuration...")
-                    os.remove(DATAPATH + "/config")
+                    os.remove(DATAPATH + "/winline.config")
                     doConfig()
 
             ### **************************************************************************** ###
@@ -1722,7 +1762,8 @@ def main():
                         if (Appversion != pv):
                             print(YELLOW + "This backup was created on a different version of WinLine\n" + DRIVES + "Warning " + error_general.backup_diff_version + RESET)
                             dob = input(BLUE + "Are you sure you want to continue? [Y/N] > ").capitalize()
-                    except:NotImplemented
+                        else:dob = "Y"
+                    except:dob == "Y"
 
 
                     if dob == "Y":
@@ -1765,12 +1806,14 @@ def main():
 
                 try:backup.write(DATAPATH + "/owner_name", "owner_name")
                 except:NotImplemented
-                try:backup.write(DATAPATH + "/config", "config")
+                try:backup.write(DATAPATH + "/winline.config", "winline.config")
                 except:NotImplemented
                 try:backup.write(DATAPATH + "/development_components.txt", "development_components.txt")
                 except:NotImplemented
                 try:backup.write(DATAPATH + "/package_version", "/package_version")
                 except:NotImplemented
+                # try:backup.write(DATAPATH + "/components", "/components")
+                # except:NotImplemented
 
                 backup.close()
 
@@ -1819,7 +1862,8 @@ def main():
                             okay = False
 
                 if okay:
-                    if (server_version != VERSION_ID):
+                    server_version = server_version.split("\n")[0]
+                    if (server_version != VERSION_ID) and not server_version in OLD_VERSIONS:
                         print(YELLOW + "You are currently using WinLine " + SEAFOAM + Appversion + YELLOW + ", and version " + SEAFOAM + server_version + YELLOW + " is available" + RESET)
                         print(DEV_COLOR + "The update will be pulled from the " + SPECIALDRIVE + CHANNEL + DEV_COLOR + " channel")
                         cinst = input(BLUE + "Do you want to update? [Y/N] > " + RESET).capitalize()
@@ -1858,7 +1902,7 @@ def main():
                                     shutil.copy(stage_path + "/utilities.py", DATAPATH + "/utilities.py")
                                     print(SPECIALDRIVE + "Update complete! Please restart WinLine to use the new version" + RESET)
                                 except Exception as err:
-                                    print(RED + "Core files could not be updated: " + str(err) + RESET)
+                                    print(RED + "Core files could not be updated: " + str(err) + ". Trying again may fix the issue"+ RESET)
 
                                 shutil.rmtree(stage_path, True)
 
@@ -1885,7 +1929,11 @@ def main():
                                 #     else:
                                 #         print(RED + "Failed to download documentation" + RESET)
                             else:
-                                print(RED + "Update failed: " + reason + RESET)
+                                print(RED + "Update failed: " + reason + ". Trying again may fix the issue"+ RESET)
+
+                    else:
+                        print(YELLOW + "WinLine is already up-to-date" + RESET)
+                        print(DEV_COLOR + "Current channel: " + SPECIALDRIVE + CHANNEL + RESET)
                     
                 else:
                     print(RED + "Unable to connect to server" + RESET)
@@ -1977,18 +2025,18 @@ def main():
                         if not NON_WIN:subprocess.run("python3 " + DATAPATH + "/components/%s.py"%runCommand)
                         else:os.system("python3 " + DATAPATH + "/components/%s.py"%runCommand)
                     else:
-                        if ALLOW_COMPONENTS in config:
+                        if winConfig.ENABLE_COMPONENTS:
                             if not (command in enabled_components):print(RED + "That component hasn't been loaded yet. To load it, run the '" + BLUE + "term -r" + RED + "' command" + RESET)
                             else:print(RED + "That component was unloaded by the user or a script. To load it, run the '" + BLUE + "components --load %s"%command + RED + "' command" + RESET)
                             print(DRIVES + "Unloaded addon: " + command + RESET + "\n")
                         else:
                             print(RED + "Components have been disabled from the config file\n" + RESET)
 
-                elif not (SYSRUN_FAILED_COMMANDS in config):
+                elif not (winConfig.RUN_FAILED_COMMANDS_SYSTEM):
                     sys.stdout.write(u"\x1b[1A" + u"\x1b[2K" + "\r" + locprefix + location + "> " + "\u001b[1;41m" + command + RESET + "\n")
                     print(RED + "Unknown command\n" + RESET)
                 else:
-                    if not (USE_SAFE_MODE in config):
+                    if not (winConfig.SAFE_MODE):
                         try:
                             # print(BLUE + "System: " + RESET)
                             # subprocess.run(command)
@@ -2002,7 +2050,7 @@ def main():
  
 
         except KeyboardInterrupt:
-            if (ENABLEKEYBOARDINTURRUPT in config):
+            if (winConfig.KEYBOARD_INTURRUPT_ENABLED):
                 sys.exit()
             else:
                 print("")
@@ -2027,19 +2075,21 @@ def main():
                 print(RED + "Unhandled error: " + str(err) + RESET)
 
 
-if (ADVANCEDMODE in config) and not ISDEV:
+if (winConfig.ADVANCED_MODE) and not ISDEV:
     print(SPECIALDRIVE + "Advanced mode is enabled\n" + RESET)
 elif ISDEV:
     print(DEV_COLOR + "Developer mode is enabled\n" + RESET)
-
-if not (USE_SAFE_MODE in config):
-    if ENABLE_AV_CHECK in config:
-        if not THREADED_AV_CHECK in config:
-            checkForDangerousComponents()
+try:
+    if not (winConfig.SAFE_MODE):
+        if winConfig.ENABLE_MALWARE_PROTECTION:
+            if not winConfig.MALWARE_PROC_USE_THREAD:
+                checkForDangerousComponents()
+            else:
+                td(target=checkForDangerousComponents, name="A/V check thread").start()
         else:
-            td(target=checkForDangerousComponents, name="A/V check thread").start()
-    else:
-        print(DRIVES + "Warning: malware detection has been disabled from the config file. WinLine will not check for malicious components!" + RESET)
+            print(DRIVES + "Warning: malware detection has been disabled from the config file. WinLine will not check for malicious components!" + RESET)
+except:
+    print(RED + "CRITICAL ERROR: FAILED TO START ANTI-MALWARE THREAD" + RESET)
 
 print("")
 
@@ -2047,10 +2097,10 @@ while True:
     try:
         main()
     except KeyboardInterrupt:
-        if ENABLEKEYBOARDINTURRUPT in config:
+        if winConfig.KEYBOARD_INTURRUPT_ENABLED:
             os.abort()
     except Exception as err:
-        if not (RESET_ON_ERROR in config):
+        if not (winConfig.HARD_RESET_UPON_ERROR):
             print(YELLOW + "\n##-----------------------##"+RESET)
             print(YELLOW + "WinLine Exception Handler\n" + RESET)
             time.sleep(0.1)
