@@ -24,7 +24,7 @@ The terminal emulates a lxterm-like environment, sutable for users familiar with
 * Python 3.x
 * 100 KB free space for core files
 * 10 KB free space for documentation
-* Windows 10 / Windows 11
+* Windows 10 / Windows 11 OR Linux
 
 ## RECOMMENDED:
 * Python 3.8
@@ -35,7 +35,7 @@ The terminal emulates a lxterm-like environment, sutable for users familiar with
 
 ## VERSION SUPPORT:
 This table provides information about which versions on WinLine we will actively provide support for.\
-**Policy**: We will provide active support for the last 4 updates, with the oldest being for upgrading only. Each version of WinLine will reach End of Life 3 months after their release.
+**Policy**: We will provide active support for the last 4 updates. Each version of WinLine will reach End of Life 3 months after their release
 
 |Version|Support|End of Life|
 |-------|-------|-------|
@@ -54,7 +54,8 @@ This table provides information about which versions on WinLine we will actively
 |3.7.4|**None**|2/21/23|
 |3.9.7|**None**|3/10/23|
 |3.9.8|**None**|3/10/23|
-|3.11|**Full**|3/27/23|
+|3.11|**None**|3/27/23|
 |3.11.1|**Full**|4/4/23|
 |3.12|**Full**|4/4/23|
 |3.13|**Full**|4/14/23|
+|3.14|**Full**|4/21/23|
