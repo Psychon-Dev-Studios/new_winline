@@ -16,7 +16,11 @@ DATAPATH = "/home/%s/.winline"%os.getlogin()
 if (os.path.isfile(PATH + "/winline.dat")):INSTALLABLE = True
 else:INSTALLABLE = False
 
-print(YELLOW + "### WinLine - Linux Installer ###" + RESET)
+print(YELLOW + "### WinLine - Linux Installer ###\n" + RESET)
+
+print(YELLOW + "By continuing with the installation, you will be granting WinLine the following permissions:\n- Create, modify, and delete WinLine files\n- Read and write to files you open with the application\n- Create, modify, and delete WinLine directories\n- Modify and delete directories you open with the application\n- Enable command-line support for Bash\n- Access the internet\n- Access system information such as: OS, system version, and username\n- Interact with other applications on your system (for example, to launch or close them)\n- Install third-party packages to enable functionality (TK, psutil)")
+
+input(BLUE + "Press enter to continue, or Ctrl+C to exit" + RESET)
 
 if not INSTALLABLE:
     print(RED + "Cannot find " + BLUE + "winline.dat" + RED + ". Make sure the file is in this directory: " + BLUE + PATH + RESET)

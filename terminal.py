@@ -1,8 +1,15 @@
-## For those curious, the main function starts waaaaay down near line 430 (might be further or closer, who knows. We modify the start of this file a LOT)
+## For those curious, the main function starts waaaaay down near line 488 (might be further or closer, who knows. We modify the start of this file a LOT)
 
-VERSION_ID = "3.13" # Current WinLine version. Should be in format MAJOR.MINOR
+VERSION_ID = "3.14" # Current WinLine version. Should be in format MAJOR.MINOR
 PATCH_ID = 0 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
 SVRMODE = 0 # Set to 1 to switch to a locally-served server on port 80
+
+# Key Version Info
+OLD_VERSIONS = ['3.0', '3.1', '3.2', '3.2.1' '3.3', '3.3.1', '3.4', '3.5', '3.6', '3.7', '3.7.1', '3.7.2', '3.7.4', '3.9.7', '3.9.8', '3.11', '3.11.1', "3.12", "3.13"]
+VALID_CHANNELS = ["stable", "beta"]
+KEY_DEVMODE = "UNSTABLE %s"%VERSION_ID
+KEY_BETA = "GIT_BETA"
+KEY_DISTMODE = "GIT_STABLE"
 
 # Components
 LATEST_SUPPORTED_PACK_MANIFEST = 1.1 # The latest component manifest version supported
@@ -37,29 +44,29 @@ class error_general():
     syserr="a1282e70"
 # End error codes
 
-# Key Version Info
-OLD_VERSIONS = ['3.0', '3.1', '3.2', '3.2.1' '3.3', '3.3.1', '3.4', '3.5', '3.6', '3.7', '3.7.1', '3.7.2', '3.7.4', '3.9.7', '3.9.8', '3.11', '3.11.1']
-VALID_CHANNELS = ["stable", "beta"]
-KEY_DEVMODE = "UNSTABLE %s"%VERSION_ID
-KEY_BETA = "GIT_BETA"
-KEY_DISTMODE = "GIT_STABLE"
-
 # These file types will not auto-launch no matter what, as these tend to be dangerous
 BANNED_FILETYPES = ['bat', 'bin', 'cmd', 'com', 'cpl', 'exe', 'gadget', 'inf1', 'ins', 'inx', 'isu', 'job', 'jse', 'msc', 'lnk', 'msi', 'msp', 'mst', 'paf', 'pif', 'ps1', 'reg', 'rgs', 'scr', 'sct', 'shb', 'shs', 'u3p', 'vb', 'vbe', 'vbs', 'vbscript', 'ws', 'wsf', 'wsh', 'cab', 'ex_', '_ex', 'ex', 'isu', 'otm', 'potm', 'ppam', 'ppsm', 'pptm', 'udf', 'upx', 'url', 'wcm', 'xap', 'xlsm', 'xltm', '']
 
 # Code to initialze and import the configuration file #
 try:
-    import sys
+    import sys, os
     from importlib.util import spec_from_loader, module_from_spec
     from importlib.machinery import SourceFileLoader
 
-    spec = spec_from_loader("config", SourceFileLoader("winline", sys.path[0] + "/winline.config"))
+    try:
+        dl = str(os.environ['WINDIR'].split(":\\")[0])
+        dp = dl + ":/ProgramData/winLine"
+    except:
+        dp = "/home/%s/.winline"%os.getlogin()
+
+    spec = spec_from_loader("winline", SourceFileLoader("winline", dp + "/winline.conf"))
     sets = module_from_spec(spec);spec.loader.exec_module(sets)
     sys.modules['config'] = sets # Load the config file as a python module, letting us use the settings inside as variables
 
     from config import winConfig
 
-except:
+except Exception as err:
+    time.sleep(1)
     # Internal defaults of the config file, in case it cannot be found
     WINCF_FLATSTRING = """class winConfig():
     # Classic configuration options #
@@ -74,10 +81,12 @@ except:
     ENABLE_MALWARE_PROTECTION = True # Enables protection against malicious components
     MALWARE_PROC_USE_THREAD = True # Runs malware protection in a seperate thread if enabled, reducing startup time
     SAFE_MODE = False # Whether safe mode is enabled or not. When enabled, most configuration options are overriden
+    ACHECK_FOR_UPDATES = False # Whether to enable automatically checking for updates. Experimental as-of 3.14
 
     # Network configuration options #
     ALLOW_NETWORK_CONNECTIONS = True # Set to false to prevent WinLine from connecting to any server
-    SERVER_URL = "https://psychon-dev-studios.github.io/nwl_stirehost" # The URL WinLine will connect to in order to update and for other resources"""
+    SERVER_URL = "https://psychon-dev-studios.github.io/nwl_stirehost" # The URL WinLine will connect to in order to update and for other resources
+    REQUIRE_HTTPS = True # If set to true, HTTP URLs will be rejected"""
 
     class winConfig():
         # Classic configuration options #
@@ -92,10 +101,12 @@ except:
         ENABLE_MALWARE_PROTECTION = True
         MALWARE_PROC_USE_THREAD = True
         SAFE_MODE = False
+        ACHECK_FOR_UPDATES = False
 
         # Additional configuration options #
-        ALLOW_NETWORK_CONNECTIONS = True # Set to false to prevent WinLine from connecting to any server
+        ALLOW_NETWORK_CONNECTIONS = True
         SERVER_URL = "https://psychon-dev-studios.github.io/nwl_stirehost"
+        REQUIRE_HTTPS = True
 
 
 if winConfig.ALLOW_NETWORK_CONNECTIONS:
@@ -105,7 +116,7 @@ else:
 
 # Import handlers
 try:
-    import os, sys, shutil, socket, subprocess, time, json, atexit
+    import os, sys, shutil, socket, subprocess, time, json
     from io import BytesIO
     from zipfile import ZipFile
     from urllib import request as urlRequest
@@ -271,7 +282,7 @@ def get_drives():
 def doConfig():
     global config
     if True: # Relic of os-based feature selection. This has since been removed, but we haven't fixed indents yet
-        if not (os.path.isfile(DATAPATH + "/winline.config")) or (open(DATAPATH + "/winline.config", "r").read() == ""):
+        if not (os.path.isfile(DATAPATH + "/winline.conf")) or (open(DATAPATH + "/winline.conf", "r").read() == ""):
             sleep(0.75)
             print(DULLYELLOW + "Welcome to WinLine!")
             print(BLUE + "Please wait for automatic setup to finish..." + RESET)
@@ -293,7 +304,7 @@ def doConfig():
             
             # Try to write the base config contents
             try:
-                file = open(DATAPATH + "/winline.config", "a")
+                file = open(DATAPATH + "/winline.conf", "a")
                 file.write(WINCF_FLATSTRING)
                 file.close()
 
@@ -322,7 +333,7 @@ def doConfig():
             sleep(1)
             print(DULLYELLOW + "To get started, use " + BLUE + "help " + DULLYELLOW + "to list supported commands.\n\n" + RESET)
 
-            config = open(DATAPATH + "/winline.config", "r").read()
+            config = open(DATAPATH + "/winline.conf", "r").read()
 
         # Component-related directory creation. This is here to prevent issues with bare installations
         if not os.path.isdir(DATAPATH + "/components"):
@@ -371,16 +382,16 @@ def doConfig():
                 file.close()
 
         # If upgrading past 3.11, this code should execute to move to the new configuration scheme
-        if not os.path.isfile(DATAPATH + "/winline.config"):
+        if not os.path.isfile(DATAPATH + "/winline.conf"):
             if os.path.isfile(DATAPATH + "/config"): OLD_CONF_EXISTS = True
             else: OLD_CONF_EXISTS = False
 
             if OLD_CONF_EXISTS: print(BLUE + "Please wait, WinLine needs to migrate to the new configuration file. This should only take a moment");os.remove(DATAPATH + "/config")
-            file = open(DATAPATH + "/winline.config", "a")
+            file = open(DATAPATH + "/winline.conf", "a")
             file.write(WINCF_FLATSTRING)
             file.close()
 
-            print(YELLOW + "Notice: your configuration changes have been reset. You can find the new configuration file here: " + BLUE + DATAPATH + "/winline.config" + RESET)
+            print(YELLOW + "Notice: your configuration changes have been reset. You can find the new configuration file here: " + BLUE + DATAPATH + "/winline.conf" + RESET)
             time.sleep(5)
 
     else:
@@ -433,9 +444,14 @@ def checkForDangerousComponents():
     global found_dangerous
     dangerousCount = 0
     try:
-        unsafe_components = str(urlRequest.urlopen(REMOTE_SERVER  + "/components/dangerous").read(), "'UTF-8'")
-        verified_components = str(urlRequest.urlopen(REMOTE_SERVER  + "/components/official").read(), "'UTF-8'")
-        unsafe_components = unsafe_components + "\n" + DANGEROUS_ADDONS_BUILTIN
+        if (winConfig.REQUIRE_HTTPS and "https://" in REMOTE_SERVER.lower()) or not winConfig.REQUIRE_HTTPS:
+            unsafe_components = str(urlRequest.urlopen(REMOTE_SERVER  + "/components/dangerous").read(), "'UTF-8'")
+            verified_components = str(urlRequest.urlopen(REMOTE_SERVER  + "/components/official").read(), "'UTF-8'")
+            unsafe_components = unsafe_components + "\n" + DANGEROUS_ADDONS_BUILTIN
+        else:
+            print(RED + "The current configuration requires an HTTPS connection, but an HTTP URL has been specified" + RESET)
+            unsafe_components = ""
+            verified_components = ""
     except Exception as err:
         unsafe_components = DANGEROUS_ADDONS_BUILTIN
         verified_components = ""
@@ -1561,11 +1577,11 @@ def main():
             elif (command == "config"):
                 if not NON_WIN:
                     print(YELLOW + "Please select 'Notepad' or another text editor to open the file" + RESET)
-                    os.startfile(DRIVELETTER + ":/ProgramData/winLine/winline.config")
+                    os.startfile(DRIVELETTER + ":/ProgramData/winLine/winline.conf")
                 else:
                     # print(RED + "Configuration cannot be modified on non-Windows systems" + RESET)
                     print(YELLOW + "Attempting to open the config file in NANO" + RESET)
-                    os.system("nano /home/%s/.winline/winline.config"%os.getlogin())
+                    os.system("nano /home/%s/.winline/winline.conf"%os.getlogin())
 
             ### **************************************************************************** ###
             
@@ -1684,7 +1700,7 @@ def main():
 
                 if allow == "Y":
                     print(YELLOW + "Updating configuration...")
-                    os.remove(DATAPATH + "/winline.config")
+                    os.remove(DATAPATH + "/winline.conf")
                     doConfig()
 
             ### **************************************************************************** ###
@@ -1806,7 +1822,7 @@ def main():
 
                 try:backup.write(DATAPATH + "/owner_name", "owner_name")
                 except:NotImplemented
-                try:backup.write(DATAPATH + "/winline.config", "winline.config")
+                try:backup.write(DATAPATH + "/winline.conf", "winline.conf")
                 except:NotImplemented
                 try:backup.write(DATAPATH + "/development_components.txt", "development_components.txt")
                 except:NotImplemented
@@ -1831,35 +1847,40 @@ def main():
             ### **************************************************************************** ###
 
             elif command == "update":
-                print(YELLOW + "Contacting server and checking for updates..." + RESET)
-                if not NON_WIN:
-                        stage_path = DRIVELETTER + ":/ProgramData/wlstage"
-                else:
-                        stage_path = "/tmp/wlstage"
-                keepTrying = True
-                failed = 0
-                okay = True
-                while keepTrying == True:
-                    try:
-                        chanfile = open(DATAPATH + "/channel", "r")
-                        channel = chanfile.read()
-                        CHANNEL = channel if channel in VALID_CHANNELS else "stable"
-                        chanfile.close()
+                if (winConfig.REQUIRE_HTTPS and "https://" in REMOTE_SERVER.lower()) or not winConfig.REQUIRE_HTTPS:
+                    print(YELLOW + "Contacting server and checking for updates..." + RESET)
+                    if not NON_WIN:
+                            stage_path = DRIVELETTER + ":/ProgramData/wlstage"
+                    else:
+                            stage_path = "/tmp/wlstage"
+                    keepTrying = True
+                    failed = 0
+                    okay = True
+                    while keepTrying == True:
+                        try:
+                            chanfile = open(DATAPATH + "/channel", "r")
+                            channel = chanfile.read()
+                            CHANNEL = channel if channel in VALID_CHANNELS else "stable"
+                            chanfile.close()
 
-                        if CHANNEL == "stable":
-                            server_version = str(urlRequest.urlopen(REMOTE_SERVER  + "/latest_version").read(), "'UTF-8'")
-                        else:
-                            server_version = str(urlRequest.urlopen(REMOTE_SERVER  + "/latest_version_" + CHANNEL).read(), "'UTF-8'")
-                        # print(BLUE + "Current version: %s"%VERSION_ID + RESET)
-                        # print(YELLOW + "Latest version: %s"%server_version + RESET)
-                        keepTrying = False
-                    except:
-                        failed += 1
-                        time.sleep(1)
-
-                        if failed > 3:
+                            if CHANNEL == "stable":
+                                server_version = str(urlRequest.urlopen(REMOTE_SERVER  + "/latest_version").read(), "'UTF-8'")
+                            else:
+                                server_version = str(urlRequest.urlopen(REMOTE_SERVER  + "/latest_version_" + CHANNEL).read(), "'UTF-8'")
+                            # print(BLUE + "Current version: %s"%VERSION_ID + RESET)
+                            # print(YELLOW + "Latest version: %s"%server_version + RESET)
                             keepTrying = False
-                            okay = False
+                        except:
+                            failed += 1
+                            time.sleep(1)
+
+                            if failed > 3:
+                                keepTrying = False
+                                okay = False
+                
+                else:
+                    print(RED + "The current configuration requires an HTTPS connection, but an HTTP URL has been specified" + RESET)
+                    okay = False
 
                 if okay:
                     server_version = server_version.split("\n")[0]
@@ -1939,7 +1960,8 @@ def main():
                     print(RED + "Unable to connect to server" + RESET)
 
                 print("")
-                shutil.rmtree(stage_path, True)
+                try: shutil.rmtree(stage_path, True)
+                except:NotImplemented
 
             ### **************************************************************************** ###
                         
