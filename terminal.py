@@ -1,11 +1,11 @@
 ## For those curious, the main function starts waaaaay down near line 488 (might be further or closer, who knows. We modify the start of this file a LOT)
 
-VERSION_ID = "3.14" # Current WinLine version. Should be in format MAJOR.MINOR
+VERSION_ID = "3.15" # Current WinLine version. Should be in format MAJOR.MINOR
 PATCH_ID = 0 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
 SVRMODE = 0 # Set to 1 to switch to a locally-served server on port 80
 
 # Key Version Info
-OLD_VERSIONS = ['3.0', '3.1', '3.2', '3.2.1' '3.3', '3.3.1', '3.4', '3.5', '3.6', '3.7', '3.7.1', '3.7.2', '3.7.4', '3.9.7', '3.9.8', '3.11', '3.11.1', "3.12", "3.13"]
+OLD_VERSIONS = ['3.0', '3.1', '3.2', '3.2.1' '3.3', '3.3.1', '3.4', '3.5', '3.6', '3.7', '3.7.1', '3.7.2', '3.7.4', '3.9.7', '3.9.8', '3.11', '3.11.1', "3.12", "3.13", "3.14"]
 VALID_CHANNELS = ["stable", "beta"]
 KEY_DEVMODE = "UNSTABLE %s"%VERSION_ID
 KEY_BETA = "GIT_BETA"
@@ -14,6 +14,10 @@ KEY_DISTMODE = "GIT_STABLE"
 # Components
 LATEST_SUPPORTED_PACK_MANIFEST = 1.1 # The latest component manifest version supported
 OLDEST_SUPPORTED_PACK_MANIFEST = 1 # The oldest component manifest version supported
+
+# Services
+SERVICES = ["service_logging.py", "uninstall.py", "update_service.py"]
+SERVICE_NAME_BINDING = {"service_logging.py":"Logging Service", "uninstall.py":"Uninstaller Service", "update_service.py":"Update Service"}
 
 # These are different lists used for components
 loaded_components = []
@@ -66,7 +70,6 @@ try:
     from config import winConfig
 
 except Exception as err:
-    time.sleep(1)
     # Internal defaults of the config file, in case it cannot be found
     WINCF_FLATSTRING = """class winConfig():
     # Classic configuration options #
@@ -130,6 +133,15 @@ try:
     except:
         print("Warning: utility package failed to import")
         time.sleep(2)
+
+    ## Import custom service files ##
+    try:
+        import services.uninstall as uninstall
+        import services.update_service as update
+        import services.service_logging as logging
+
+    except Exception as err:
+        NotImplemented
 
 # Something failed, import the bare essentials and warn the user about the error
 except Exception as err:
@@ -502,15 +514,13 @@ def main():
 
             if (command.lower() == "help"):
                 print(YELLOW + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'list-drives', 'monitor', 'components', 'change-name', 'user', 'battery-report', 'mount_folder', 'wldata', 'edition', 'path', 'reconfigure', 'recovery', 'backup', 'update'")
-                print(BLUE + "help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nlist-drives: lists all drives currently connected to the device\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\nmount_folder [network drive] [local drive] [folder]: mount [folder] from [local drive] as a network drive with letter [network drive]\nunmount_folder [network drive]: unmount a network drive\nreconfigure: update the config file to work with the installed version of WinLine\nwldata: open data folder\nedition: get info about release edition\npath: print the current working directory\nrecovery: restore a WinLine backup\nbackup: back up all user data (including Components) and place it on the desktop\nupdate: download the latest version of WinLine from our servers and install it\n" + RESET)
-                # """camx [flags]: launch CamX: Rebirth if installed. use '--new' to launch in a new terminal and '--dev' to launch from a developer installation\n"""
+                print(BLUE + "help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nlist-drives: lists all drives currently connected to the device\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\nmount_folder [network drive] [local drive] [folder]: mount [folder] from [local drive] as a network drive with letter [network drive]\nunmount_folder [network drive]: unmount a network drive\nreconfigure: update the config file to work with the installed version of WinLine\nwldata: open data folder\nedition: get info about release edition\npath: print the current working directory\nrecovery: restore a WinLine backup\nbackup: back up all user data (including Components) and place it on the desktop\nupdate: download the latest version of WinLine from our servers and install it\nchannel [channel_name]: switch to a different channel\nwifi_info [network SSID]: list information about [network], including password* (*for WPA2 non-enterprise)" + RESET)
                 
                 print(SPECIALDRIVE + "cmd: directly interface with Windows' command line. Use ctrl+c or type 'exit' to return to WinLine\npowershell: switch the current WinLine instance to a Powershell terminal. Use 'exit' to return to WinLine" + RESET)
 
 
                 if (winConfig.ADVANCED_MODE):
                     print(SPECIALDRIVE + "\nAdvanced commands: 'reset-term', 'sysrun'")
-                    # print("For more info, warnings, and usage examples, use " + RED + "man secretCommands" + RESET)
 
                 if len(loaded_components) != 0:
                     print(YELLOW + "\nAddon components have added additional commands. Use the " + BLUE + "components " + YELLOW + "command to list them" + RESET)
@@ -1707,34 +1717,13 @@ def main():
 
             # Uninstall WinLine :(
             elif command == "uninstall":
-                print(YELLOW + "\nWinLine Uninstaller")
-                print(YELLOW + "Please select an option:")
-                print(RED + "1. Uninstall and erase data\n2. Uninstall and keep data\n3. Cancel"+RESET)
-                
-                selectActive = True
-                while selectActive:
-                    option = input(BLUE + "Enter choice > " + RESET)
-                    selectActive = False
+                print("")
+                try:
+                    td(name="uninstall service", target=uninstall.uninstall_winline, args=[DATAPATH]).start()
+                    sys.exit()
 
-                if option == "1":
-                    print(YELLOW + "Fully uninstalling and purging data..." + RESET)
-                    try:
-                        shutil.rmtree(DATAPATH)
-                        print(RED + "WinLine has been fully uninstalled" + RESET)
-                        print(SPECIALDRIVE + "\nThanks for using WinLine! We're sad to be parting, but we understand your choice\nThis window will close momentarily" + RESET)
-                        os.abort()
-                    except Exception as err:
-                        print(RED + "WARNING: Uninstallation failed! Error: " + str(err) + RESET)
-
-                elif option == "2":
-                    print(YELLOW + "Removing core files..." + RESET)
-                    os.remove(DATAPATH + "/terminal.py")
-                    os.remove(DATAPATH + "/utilities.py")
-                    shutil.rmtree(DATAPATH + "__pycache__", ignore_errors=True)
-                    print(SPECIALDRIVE + "\nThanks for using WinLine! We're sad to be parting, but we understand your choice\nThis terminal window will not close until you choose to close it" + RESET)
-
-                else:
-                    print(YELLOW + "Cancelled" + RESET)
+                except ModuleNotFoundError:
+                    print(RED + "The uninstallation service failed to start" + RESET)
 
             ### **************************************************************************** ###
 
@@ -1846,122 +1835,10 @@ def main():
 
             ### **************************************************************************** ###
 
-            elif command == "update":
-                if (winConfig.REQUIRE_HTTPS and "https://" in REMOTE_SERVER.lower()) or not winConfig.REQUIRE_HTTPS:
-                    print(YELLOW + "Contacting server and checking for updates..." + RESET)
-                    if not NON_WIN:
-                            stage_path = DRIVELETTER + ":/ProgramData/wlstage"
-                    else:
-                            stage_path = "/tmp/wlstage"
-                    keepTrying = True
-                    failed = 0
-                    okay = True
-                    while keepTrying == True:
-                        try:
-                            chanfile = open(DATAPATH + "/channel", "r")
-                            channel = chanfile.read()
-                            CHANNEL = channel if channel in VALID_CHANNELS else "stable"
-                            chanfile.close()
-
-                            if CHANNEL == "stable":
-                                server_version = str(urlRequest.urlopen(REMOTE_SERVER  + "/latest_version").read(), "'UTF-8'")
-                            else:
-                                server_version = str(urlRequest.urlopen(REMOTE_SERVER  + "/latest_version_" + CHANNEL).read(), "'UTF-8'")
-                            # print(BLUE + "Current version: %s"%VERSION_ID + RESET)
-                            # print(YELLOW + "Latest version: %s"%server_version + RESET)
-                            keepTrying = False
-                        except:
-                            failed += 1
-                            time.sleep(1)
-
-                            if failed > 3:
-                                keepTrying = False
-                                okay = False
-                
-                else:
-                    print(RED + "The current configuration requires an HTTPS connection, but an HTTP URL has been specified" + RESET)
-                    okay = False
-
-                if okay:
-                    server_version = server_version.split("\n")[0]
-                    if (server_version != VERSION_ID) and not server_version in OLD_VERSIONS:
-                        print(YELLOW + "You are currently using WinLine " + SEAFOAM + Appversion + YELLOW + ", and version " + SEAFOAM + server_version + YELLOW + " is available" + RESET)
-                        print(DEV_COLOR + "The update will be pulled from the " + SPECIALDRIVE + CHANNEL + DEV_COLOR + " channel")
-                        cinst = input(BLUE + "Do you want to update? [Y/N] > " + RESET).capitalize()
-
-                        if cinst == "Y":
-                            print(YELLOW + "\nDownloading update..." + RESET)
-                            try:
-                                os.mkdir(stage_path)
-                            except:
-                                shutil.rmtree(stage_path)
-                                os.mkdir(stage_path)
-                            everythingIsOkay = True
-                            keepTrying = True
-                            failed = 0
-
-                            try:
-                                if CHANNEL == "stable":remFile = REMOTE_SERVER  + "/winline.dat"
-                                else:remFile = REMOTE_SERVER  + "/winline_%s.dat"%CHANNEL
-
-                                with urlRequest.urlopen(remFile) as remote_archive:
-                                    with ZipFile(BytesIO(remote_archive.read())) as update_package:
-                                        update_package.extractall(stage_path)
-                                keepTrying = False
-                            except Exception as err:
-                                failed += 1
-
-                                if failed > 5:
-                                    everythingIsOkay = False
-                                    reason = str(err)
-                                    keepTrying = False
-
-                            if everythingIsOkay:
-                                print(YELLOW + "Updating core files..." + RESET)
-                                try:
-                                    shutil.copy(stage_path + "/terminal.py", DATAPATH + "/terminal.py")
-                                    shutil.copy(stage_path + "/utilities.py", DATAPATH + "/utilities.py")
-                                    print(SPECIALDRIVE + "Update complete! Please restart WinLine to use the new version" + RESET)
-                                except Exception as err:
-                                    print(RED + "Core files could not be updated: " + str(err) + ". Trying again may fix the issue"+ RESET)
-
-                                shutil.rmtree(stage_path, True)
-
-                                # update_docs = input(BLUE + "Do you want to update the local documentation files? [Y/N] > ").capitalize()
-
-                                # if update_docs == "Y":
-                                #     print(YELLOW + "Downloading documentation..." + RESET)
-                                #     keepTrying = True
-                                #     failed = 0
-                                #     good = True
-                                #     try:
-                                #         with urlRequest.urlopen(REMOTE_SERVER  + "/winline.dat") as remote_archive:
-                                #             with ZipFile(BytesIO(remote_archive.read())) as update_package:
-                                #                 update_package.extractall(DRIVELETTER + ":/ProgramData/wlstage")
-                                #         keepTrying = False
-                                #     except:
-                                #         failed += 1
-                                #         if failed > 5:
-                                #             keepTrying = False
-                                #             good = False
-
-                                #     if good:
-                                #         print(YELLOW + "Updating documentation..." + RESET)
-                                #     else:
-                                #         print(RED + "Failed to download documentation" + RESET)
-                            else:
-                                print(RED + "Update failed: " + reason + ". Trying again may fix the issue"+ RESET)
-
-                    else:
-                        print(YELLOW + "WinLine is already up-to-date" + RESET)
-                        print(DEV_COLOR + "Current channel: " + SPECIALDRIVE + CHANNEL + RESET)
-                    
-                else:
-                    print(RED + "Unable to connect to server" + RESET)
-
-                print("")
-                try: shutil.rmtree(stage_path, True)
-                except:NotImplemented
+            elif command == "update": 
+                try: update.update_winline(winConfig, REMOTE_SERVER, NON_WIN, DRIVELETTER, DATAPATH, VERSION_ID, OLD_VERSIONS, Appversion, VALID_CHANNELS)
+                except ModuleNotFoundError:
+                    print(RED + "Update service failed to start" + RESET)
 
             ### **************************************************************************** ###
                         
@@ -2022,6 +1899,22 @@ def main():
                     print(RED + "This command is only available on Windows" + RESET)
                 else:
                     print('Wifi network not specified. Example: "wifi_info MyWifi" or "wifi_info \'My Wifi\'"')
+
+            ### **************************************************************************** ###
+
+            # Command to list all installed services
+            elif command == "services":
+                print(YELLOW + "WinLine Services" + RESET)
+                installed = os.listdir(DATAPATH + "/services/")
+
+                if "service_logging.py" in installed:print(SEAFOAM + SERVICE_NAME_BINDING["service_logging.py"] + " (installed)" + RESET)
+                else:print(DRIVES + SERVICE_NAME_BINDING["service_logging.py"] + " (not installed)" + RESET)
+                if "uninstall.py" in installed:print(SEAFOAM + SERVICE_NAME_BINDING["uninstall.py"] + " (installed)" + RESET)
+                else:print(DRIVES + SERVICE_NAME_BINDING["uninstall.py"] + " (not installed)" + RESET)
+                if "update_service.py" in installed:print(SEAFOAM + SERVICE_NAME_BINDING["update_service.py"] + " (installed)" + RESET)
+                else:print(DRIVES + SERVICE_NAME_BINDING["update_service.py"] + " (not installed)" + RESET)
+
+                print("")
 
             ### **************************************************************************** ###
 

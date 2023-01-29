@@ -109,14 +109,12 @@ def installWinLine():
     installable.remove("WinLine")
     installed.append("WinLine")
     os.remove(PATH + "/winline.dat")
-    try:os.remove(sys.path[0] + "/winline_docs.dat")
+    try:os.remove(PATH + "/winline_docs.dat")
     except:NotImplemented
-    try:os.remove(sys.path[0] + "/winline_components.dat")
+    try:os.remove(PATH + "/winline_components.dat")
     except:NotImplemented
-
-# if ("Project" in sys.path[0] or "VisualStudioCode" in sys.path[0]):
-#     print(RED + "abort" + NORMAL)
-#     os.abort()
+    try:os.remove(PATH + "/winline_services.dat")
+    except:NotImplemented
 
 if not os.path.isfile(sys.path[0] + "/winline.dat"):
     DoNotInstallCXR = True
@@ -124,7 +122,7 @@ if not os.path.isfile(sys.path[0] + "/winline.dat"):
 os.system("title WinLine - Installer")
 print(YELLOW + "WinLine Installer\n" + RESET)
 
-print(YELLOW + "By continuing with the installation, you will be granting WinLine the following permissions:\n- Create, modify, and delete WinLine files\n- Read and write to files you open with the application\n- Create, modify, and delete WinLine directories\n- Modify and delete directories you open with the application\n- Create and manage shortcuts on your desktop\n- Access the internet\n- Access system information such as: OS, system version, username, CPU utilization, and battery percentage\n- Interact with other applications on your system (for example, to launch or close them)\n- Install third-party packages to enable functionality (win32com, psutil)" + RESET)
+print(YELLOW + "By continuing with the installation, you will be granting WinLine the following permissions:\n- Create, modify, and delete WinLine files\n- Read and write to files you open with the application\n- Create, modify, and delete WinLine directories\n- Modify and delete directories you open with the application\n- Create and manage shortcuts on your desktop\n- Access the internet\n- Access system information such as: OS, system version, username, CPU utilization, and battery percentage\n- Interact with other applications on your system (for example, to launch or close them)\n- Install third-party packages to enable additional functionality (win32com, psutil)" + RESET)
 
 allow = input(BLUE + "Would you like to continue? [Y/N] > " + RESET).capitalize()
 
