@@ -1,7 +1,7 @@
 ## For those curious, the main function starts waaaaay down near line 488 (might be further or closer, who knows. We modify the start of this file a LOT)
 
 VERSION_ID = "3.15" # Current WinLine version. Should be in format MAJOR.MINOR
-PATCH_ID = 0 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
+PATCH_ID = 1 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
 SVRMODE = 0 # Set to 1 to switch to a locally-served server on port 80
 
 # Key Version Info
@@ -141,7 +141,14 @@ try:
         import services.service_logging as logging
 
     except Exception as err:
-        NotImplemented
+            class uninstall():
+                def uninstall_winline(DATAPATH): NotImplemented
+            class update():
+                def update_winline(winConfig, REMOTE_SERVER, NON_WIN, DRIVELETTER, DATAPATH, VERSION_ID, OLD_VERSIONS, Appversion, VALID_CHANNELS): print(RED + "Update service missing\n" + RESET)
+                def update_winline_no_prompt(winConfig, REMOTE_SERVER, NON_WIN, DRIVELETTER, DATAPATH, VERSION_ID, OLD_VERSIONS, Appversion, VALID_CHANNELS): NotImplemented
+            class logging():
+                def log_event(null, null2, null3=1):NotImplemented
+                def dump_log_to_terminal(DP):NotImplemented
 
 # Something failed, import the bare essentials and warn the user about the error
 except Exception as err:
@@ -468,9 +475,9 @@ def checkForDangerousComponents():
     except Exception as err:
         unsafe_components = DANGEROUS_ADDONS_BUILTIN
         verified_components = ""
-        logging.log_event("Unable to contact A/V server", DATAPATH, 3)
+        logging.log_event("Unable to contact A/V server", DATAPATH, 2)
         if not winConfig.MALWARE_PROC_USE_THREAD:
-            print(RED + "WARNING: Unable to reach A/V server. Built-in A/V may not be fully effective!\n" + YELLOW + "Error " + error_general.server_unreachable + RESET)
+            print(RED + "WARNING: Unable to reach A/V server. Built-in A/V may not be fully effective!\n" + YELLOW + "Error " + error_general.server_unreachable + ": server is unreachable" + RESET)
 
     try:
         for component in os.listdir(DATAPATH + "/components/disabled"):
@@ -496,7 +503,7 @@ def checkForDangerousComponents():
         if not winConfig.MALWARE_PROC_USE_THREAD:
             print(RED + "%s dangerous components were found and have been disabled\n"%dangerousCount + YELLOW + "Warning " + error_general.dangerous_comps + RESET)
         else:
-            print(RED + "\n Warning " + error_general.dangerous_comps + "\n> " + RESET)
+            print(RED + "\n Warning " + error_general.dangerous_comps + ": dangerous components were found and have been disabled\n> " + RESET)
 
 # This is the main function, where all commands are handled
 def main():
@@ -515,8 +522,8 @@ def main():
             ### **************************************************************************** ###
 
             if (command.lower() == "help"):
-                print(YELLOW + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'list-drives', 'monitor', 'components', 'change-name', 'user', 'battery-report', 'mount_folder', 'wldata', 'edition', 'path', 'reconfigure', 'recovery', 'backup', 'update', 'channel', 'wifi_info', 'services'")
-                print(BLUE + "help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nlist-drives: lists all drives currently connected to the device\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\nmount_folder [network drive] [local drive] [folder]: mount [folder] from [local drive] as a network drive with letter [network drive]\nunmount_folder [network drive]: unmount a network drive\nreconfigure: update the config file to work with the installed version of WinLine\nwldata: open data folder\nedition: get info about release edition\npath: print the current working directory\nrecovery: restore a WinLine backup\nbackup: back up all user data (including Components) and place it on the desktop\nupdate: download the latest version of WinLine from our servers and install it\nchannel [channel_name]: switch to a different channel\nwifi_info [network SSID]: list information about [network], including password* (*for WPA2 non-enterprise)\nservices; list WinLine services and their installation status\n" + RESET)
+                print(YELLOW + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'list-drives', 'monitor', 'components', 'change-name', 'user', 'battery-report', 'mount_folder', 'wldata', 'edition', 'path', 'reconfigure', 'recovery', 'backup', 'update', 'channel', 'wifi_info', 'services', 'log'")
+                print(BLUE + "help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nlist-drives: lists all drives currently connected to the device\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\nmount_folder [network drive] [local drive] [folder]: mount [folder] from [local drive] as a network drive with letter [network drive]\nunmount_folder [network drive]: unmount a network drive\nreconfigure: update the config file to work with the installed version of WinLine\nwldata: open data folder\nedition: get info about release edition\npath: print the current working directory\nrecovery: restore a WinLine backup\nbackup: back up all user data (including Components) and place it on the desktop\nupdate: download the latest version of WinLine from our servers and install it\nchannel [channel_name]: switch to a different channel\nwifi_info [network SSID]: list information about [network], including password* (*for WPA2 non-enterprise)\nservices; list WinLine services and their installation status\nlog: open the log file\n" + RESET)
                 
                 print(SPECIALDRIVE + "cmd: directly interface with Windows' command line. Use ctrl+c or type 'exit' to return to WinLine\npowershell: switch the current WinLine instance to a Powershell terminal. Use 'exit' to return to WinLine" + RESET)
 
@@ -1769,7 +1776,7 @@ def main():
                         pv = open(stage_path + "/package_version", "r").read()
 
                         if (Appversion != pv):
-                            print(YELLOW + "This backup was created on a different version of WinLine\n" + DRIVES + "Warning " + error_general.backup_diff_version + RESET)
+                            print(YELLOW + "This backup was created on a different version of WinLine\n" + DRIVES + "Warning " + error_general.backup_diff_version + ": The backup was created on a different version of WinLine. Restoring this backup might break some features or config options " + RESET)
                             dob = input(BLUE + "Are you sure you want to continue? [Y/N] > ").capitalize()
                         else:dob = "Y"
                     except:dob == "Y"
@@ -1909,7 +1916,8 @@ def main():
             # Command to list all installed services
             elif command == "services":
                 print(YELLOW + "WinLine Services" + RESET)
-                installed = os.listdir(DATAPATH + "/services/")
+                try:installed = os.listdir(DATAPATH + "/services/")
+                except:installed = []
 
                 if "service_logging.py" in installed:print(SEAFOAM + SERVICE_NAME_BINDING["service_logging.py"] + " (installed)" + RESET)
                 else:print(DRIVES + SERVICE_NAME_BINDING["service_logging.py"] + " (not installed)" + RESET)
@@ -1921,6 +1929,23 @@ def main():
                 print("")
 
             ### **************************************************************************** ###
+
+            elif "log" in command:
+                try:flags = command.split(maxsplit=1)[1]
+                except:flags = []
+
+                if "-d" in flags or "--dump" in flags:
+                    try: logging.dump_log_to_terminal(DATAPATH)
+                    except: print(RED + "An error occured while dumping log contents" + RESET)
+                else:
+                    try:
+                        os.startfile(DATAPATH + "/services.log")
+                    except FileNotFoundError:
+                        print(RED + "No log file exists" + RESET)
+                    except Exception as err:
+                        print(RED + "Error: " + str(err) + RESET)
+
+                print("")
 
             else:
                 if True:#not (NON_WIN)
@@ -1977,15 +2002,15 @@ def main():
         except IndexError:
                 sys.stdout.write(u"\x1b[1A" + u"\x1b[2K" + "\r")
 
-        except NameError: print(YELLOW + "\nERRCODE " + error_general.nameError + RESET)
+        except NameError: print(YELLOW + "\nERRCODE " + error_general.nameError + ": internal variable caused the command to fail" + RESET)
 
-        except OverflowError: print(YELLOW + "\nERRCODE " + error_general.ofe + RESET)
+        except OverflowError: print(YELLOW + "\nERRCODE " + error_general.ofe + ": overflow error" + RESET)
 
-        except RecursionError: print(YELLOW + "\nERRCODE " + error_general.recursion + RESET)
+        except RecursionError: print(YELLOW + "\nERRCODE " + error_general.recursion + ": recursion limit reached" + RESET)
 
-        except OSError: print(YELLOW + "\nERRCODE " + error_general.osErr + RESET)
+        except OSError: print(YELLOW + "\nERRCODE " + error_general.osErr + ": system returned an unhandled error" + RESET)
 
-        except SystemError: print(YELLOW + "\nERRCODE " + error_general.syserr + RESET)
+        except SystemError: print(YELLOW + "\nERRCODE " + error_general.syserr +": system returned an unhandled error" + RESET)
 
         except Exception as err:
             if ("has no attribute 'induce'" in str(err)):
@@ -2014,7 +2039,7 @@ try:
     if not (winConfig.SAFE_MODE):
         if winConfig.ACHECK_FOR_UPDATES and winConfig.ALLOW_NETWORK_CONNECTIONS:
             if (winConfig.REQUIRE_HTTPS == False) or (winConfig.REQUIRE_HTTPS and "https://" in winConfig.SERVER_URL.lower()):
-                update.update_winline_no_prompt(winConfig, REMOTE_SERVER, NON_WIN, DRIVELETTER, DATAPATH, VERSION_ID, OLD_VERSIONS, Appversion, VALID_CHANNELS)
+                td(name="update_thread", target=update.update_winline_no_prompt, args=[winConfig, REMOTE_SERVER, NON_WIN, DRIVELETTER, DATAPATH, VERSION_ID, OLD_VERSIONS, Appversion, VALID_CHANNELS]).start()
 
 except Exception as err:
     logging.log_event("Failed to start auto-update service: " + str(err), DATAPATH, 3)
