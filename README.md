@@ -45,7 +45,7 @@ This table provides information about which versions on WinLine we will actively
 |~~3.2.1~~|***EOL***|1/9/23|
 |~~3.3~~|***EOL***|1/9/23|
 |~~3.3.1~~|***EOL***|1/9/23|
-|3.4|**None**|1/27/23|
+|3.4|**EOL**|1/27/23|
 |3.5|**None**|2/7/23|
 |3.6|**None**|2/9/23|
 |3.7|**None**|2/13/23|
@@ -55,7 +55,8 @@ This table provides information about which versions on WinLine we will actively
 |3.9.7|**None**|3/10/23|
 |3.9.8|**None**|3/10/23|
 |3.11|**None**|3/27/23|
-|3.11.1|**Full**|4/4/23|
+|3.11.1|**None**|4/4/23|
 |3.12|**Full**|4/4/23|
 |3.13|**Full**|4/14/23|
 |3.14|**Full**|4/21/23|
+|3.15|**Full**|4/29/23|
