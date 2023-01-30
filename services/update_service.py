@@ -4,7 +4,9 @@ import shutil, os, time
 from zipfile import ZipFile
 from urllib import request as urlRequest
 from io import BytesIO
-import services.service_logging as logging
+try:
+    import services.service_logging as logging
+except: import service_logging as logging
 
 # Colors
 BLUE = "\u001b[38;5;87m"
@@ -178,6 +180,7 @@ def update_winline_no_prompt(winConfig, REMOTE_SERVER, NON_WIN, DRIVELETTER, DAT
 
     if okay:
         server_version = server_version.split("\n")[0]
+        logging.log_event("Local: %s, server: %s"%(str(VERSION_ID), str(server_version)), DATAPATH)
         if (server_version != VERSION_ID) and not server_version in OLD_VERSIONS:
             cinst = "Y"
 
@@ -264,7 +267,7 @@ def update_winline_no_prompt(winConfig, REMOTE_SERVER, NON_WIN, DRIVELETTER, DAT
                         
     else:
         # print(RED + "Unable to connect to server" + RESET)
-        logging.log_event("Unable to connect to server", DATAPATH, 1)
+        logging.log_event("Unable to connect to update server", DATAPATH, 1)
 
     # print("")
     try: shutil.rmtree(stage_path, True)

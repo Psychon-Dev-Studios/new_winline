@@ -3,6 +3,10 @@
 import os, time
 from time import localtime as tm
 
+BLUE = "\u001b[38;5;87m"
+YELLOW = "\u001b[1;33m"
+RESET = "\u001b[0m"
+
 def log_event(message:str, DATAPATH:str, severity=1):
     """ Append a message to the end of the log file.
         ### The following are the accepted SEVERITY levels:
@@ -16,7 +20,7 @@ def log_event(message:str, DATAPATH:str, severity=1):
     
     if not (os.path.isfile(DATAPATH + "/services.log")):
         lf = open(DATAPATH + "/services.log", "x")
-        lf.write("Log file created at %s\n"%currentTime)
+        lf.write("%s -- %s: %s\n"%(currentTime, "INFO", "Log file created"))
         lf.close()
 
     ## Convert SEVERITY to string format ##
@@ -29,3 +33,13 @@ def log_event(message:str, DATAPATH:str, severity=1):
     ## Log to the file
     logFile = open(DATAPATH + "/services.log", "a")
     logFile.write("%s -- %s: %s\n"%(currentTime, severity, message))
+    logFile.close()
+
+def dump_log_to_terminal(DATAPATH):
+    print(YELLOW + "Dumping log to terminal" + RESET)
+    log_event("Dumping log contents", DATAPATH)
+
+    logFile = open(DATAPATH + "/services.log", "r")
+
+    print(logFile.read())
+    logFile.close()
