@@ -85,6 +85,11 @@ def installWinLine():
                 data.extractall(WINDRIVE + ":/ProgramData/winLine/components")
                 data.close()
         except Exception as err:NotImplemented
+    try:
+        with ZipFile(sys.path[0] + "/winline_services.dat") as data:
+            data.extractall(WINDRIVE + ":/ProgramData/winLine/services")
+            data.close()
+    except Exception as err:NotImplemented
         
     time.sleep(1.5)
 
