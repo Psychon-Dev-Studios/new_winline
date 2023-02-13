@@ -39,10 +39,7 @@ This table provides information about which versions on WinLine we will actively
 
 |Version|Support|End of Life|
 |-------|-------|-------|
-|3.4|**EOL**|1/27/23|
-|3.5|**None**|2/7/23|
-|3.6|**None**|2/9/23|
-|3.7|**None**|2/13/23|
+|3.7|***EOL***|2/13/23|
 |3.7.1|**None**|2/21/23|
 |3.7.2|**None**|2/21/23|
 |3.7.4|**None**|2/21/23|
