@@ -1,11 +1,11 @@
 ## For those curious, the main function starts waaaaay down near line 488 (might be further or closer, who knows. We modify the start of this file a LOT)
 
 VERSION_ID = "3.15" # Current WinLine version. Should be in format MAJOR.MINOR
-PATCH_ID = 1 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
+PATCH_ID = 2 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
 SVRMODE = 0 # Set to 1 to switch to a locally-served server on port 80
 
 # Key Version Info
-OLD_VERSIONS = ['3.0', '3.1', '3.2', '3.2.1' '3.3', '3.3.1', '3.4', '3.5', '3.6', '3.7', '3.7.1', '3.7.2', '3.7.4', '3.9.7', '3.9.8', '3.11', '3.11.1', "3.12", "3.13", "3.14"]
+OLD_VERSIONS = ['3.0', '3.1', '3.2', '3.2.1' '3.3', '3.3.1', '3.4', '3.5', '3.6', '3.7', '3.7.1', '3.7.2', '3.7.4', '3.9.7', '3.9.8', '3.11', '3.11.1', "3.12", "3.13", "3.14", "3.15", "3.15.1"]
 VALID_CHANNELS = ["stable", "beta"]
 KEY_DEVMODE = "UNSTABLE %s"%VERSION_ID
 KEY_BETA = "GIT_BETA"
@@ -604,56 +604,8 @@ def main():
 
             # Command to list directory contents
             elif (command.split(maxsplit=1)[0] == "ls"):
-                abort = False
-                try:
-                    if (command.split(maxsplit=1)[1] != "/"):
-                        pathToList = location + "%s" % command.split(maxsplit=1)[1]
-                        dirContents = os.listdir(pathToList)
-                    else: 
-                        print(BLUE + "Listing drives..." + RESET)
-                        get_drives()
-                        dirContents = ""
-
-                except IndexError:
-                    NotImplemented
-                    pathToList = location
-                    dirContents = os.listdir(location)
-
-                except PermissionError:
-                    print(RED + "Permission denied" + RESET)
-                    abort = True
-
-                except Exception as err:
-                    print(RED + "Path not found"+ RESET)
-                    
-                    pathToList = ""; dirContents = ""; abort = True
-                    # pathToList = location
-                    # dirContents = os.listdir(location)
-                
-                if not abort:
-                    try:
-                        testStr = pathToList.split("/")
-                        try:
-                            if (testStr[len(testStr) - 1] == ""):
-                                pathToList = pathToList[:-1]
-                        except:
-                            NotImplemented
-                    
-                    except Exception as err:
-                        if ("BitLocker" in str(err)):
-                            print(RED + "That device is protected by BitLocker. You need to unlock it through the File Explorer to continue" + RESET)
-
-
-                    index = 0
-
-                    for contents in dirContents:
-                        if ((os.path.isdir(pathToList + "/" + contents)) or (os.path.isdir(location + "/" + contents))):
-                            print(MAGENTA + contents + RESET)
-                            index += 1
-                        else:
-                            print(contents)
-                            index += 1
-                print("")
+                if command.lower() == "ls": os.system("dir %s"%location.replace("/", "\\"))
+                else: os.system("dir %s"%command.split(maxsplit=1)[1].replace("/", "\\"))
 
             ### **************************************************************************** ###
 
