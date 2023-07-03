@@ -1,7 +1,7 @@
 ## For those curious, the main function starts waaaaay down near line 488 (might be further or closer, who knows. We modify the start of this file a LOT)
 
 VERSION_ID = "3.15" # Current WinLine version. Should be in format MAJOR.MINOR
-PATCH_ID = 2 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
+PATCH_ID = 3 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
 SVRMODE = 0 # Set to 1 to switch to a locally-served server on port 80
 
 # Key Version Info
@@ -234,12 +234,12 @@ except:
 
 # If not on Linux, rename the terminal. This also configures osext
 try:
-    if os.name == "nt" and os.path.isfile(DATAPATH + "/config"):
+    if os.name == "nt" and os.path.isfile(DATAPATH + "/winline.conf"):
         if (winConfig.EMULATE_LINUX == False):NON_WIN = False;osext="";CLEAR_COMMAND="cls"
         else:NON_WIN = True;osext=" (Linux Emulation)";CLEAR_COMMAND="clear"
-    elif not os.path.isfile(DATAPATH + "/config"):
+    elif not os.path.isfile(DATAPATH + "/winline.conf"):
         NON_WIN = False;osext="";CLEAR_COMMAND="clear"
-except:
+except Exception as err:
     NON_WIN = True;osext="";CLEAR_COMMAND="clear"
 
 print("\a") # Booooop
