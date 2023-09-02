@@ -44,4 +44,4 @@ This table provides information about which versions on WinLine we will actively
 |3.15|**Full**|4/29/23|
 |3.15.1|**Full**|7/17/23|
 |3.15.2|**Full**|7/18/23|
-|3.16.4|**Full**|9/2/23|
+|3.16.4|**Full**|12/2/23|
