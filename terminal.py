@@ -1,11 +1,11 @@
-## For those curious, the main function starts waaaaay down near line 488 (might be further or closer, who knows. We modify the start of this file a LOT)
+## For those curious, the main function starts waaaaay down near line 527 (might be further or closer, who knows. We modify the start of this file a LOT)
 
-VERSION_ID = "3.15" # Current WinLine version. Should be in format MAJOR.MINOR
-PATCH_ID = 3 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
+VERSION_ID = "3.16" # Current WinLine version. Should be in format MAJOR.MINOR
+PATCH_ID = 4 # Set to a whole number to add a PATCH to version (E.G to make version MAJOR.MINOR.PATCH)
 SVRMODE = 0 # Set to 1 to switch to a locally-served server on port 80
 
 # Key Version Info
-OLD_VERSIONS = ['3.0', '3.1', '3.2', '3.2.1' '3.3', '3.3.1', '3.4', '3.5', '3.6', '3.7', '3.7.1', '3.7.2', '3.7.4', '3.9.7', '3.9.8', '3.11', '3.11.1', "3.12", "3.13", "3.14", "3.15", "3.15.1"]
+OLD_VERSIONS = ['3.0', '3.1', '3.2', '3.2.1' '3.3', '3.3.1', '3.4', '3.5', '3.6', '3.7', '3.7.1', '3.7.2', '3.7.4', '3.9.7', '3.9.8', '3.11', '3.11.1', "3.12", "3.13", "3.14", "3.15", "3.15.1", "3.15.2", "3.16", "3.16.1", "3.16.2"]
 VALID_CHANNELS = ["stable", "beta"]
 KEY_DEVMODE = "UNSTABLE %s"%VERSION_ID
 KEY_BETA = "GIT_BETA"
@@ -67,7 +67,7 @@ try:
     sets = module_from_spec(spec);spec.loader.exec_module(sets)
     sys.modules['config'] = sets # Load the config file as a python module, letting us use the settings inside as variables
 
-    from config import winConfig
+    from config import winConfig # type: ignore
 
 except Exception as err:
     # Internal defaults of the config file, in case it cannot be found
@@ -111,6 +111,15 @@ except Exception as err:
         SERVER_URL = "https://psychon-dev-studios.github.io/nwl_stirehost"
         REQUIRE_HTTPS = True
 
+try:
+    spec = spec_from_loader("winline", SourceFileLoader("winline", dp + "/externalTools.conf"))
+    sets = module_from_spec(spec);spec.loader.exec_module(sets)
+    sys.modules['externalTools'] = sets # Load the config file as a python module, letting us use the settings inside as variables
+
+    from externalTools import externalTools # type: ignore
+
+except:
+    externalTools = {}
 
 if winConfig.ALLOW_NETWORK_CONNECTIONS:
     REMOTE_SERVER = winConfig.SERVER_URL
@@ -136,16 +145,18 @@ try:
 
     ## Import custom service files ##
     try:
-        import services.uninstall as uninstall
-        import services.update_service as update
-        import services.service_logging as logging
+        import services.uninstall as uninstall # type: ignore
+        import services.update_service as update # type: ignore
+        import services.service_logging as logging # type: ignore
 
     except Exception as err:
             class uninstall():
                 def uninstall_winline(DATAPATH): NotImplemented
             class update():
-                def update_winline(winConfig, REMOTE_SERVER, NON_WIN, DRIVELETTER, DATAPATH, VERSION_ID, OLD_VERSIONS, Appversion, VALID_CHANNELS): print(RED + "Update service missing\n" + RESET)
-                def update_winline_no_prompt(winConfig, REMOTE_SERVER, NON_WIN, DRIVELETTER, DATAPATH, VERSION_ID, OLD_VERSIONS, Appversion, VALID_CHANNELS): NotImplemented
+                def update_winline(winConfig, REMOTE_SERVER, NON_WIN, DRIVELETTER, DATAPATH, VERSION_ID, OLD_VERSIONS, Appversion, VALID_CHANNELS): 
+                    service_repair(True)
+
+                def update_winline_no_prompt(winConfig, REMOTE_SERVER, NON_WIN, DRIVELETTER, DATAPATH, VERSION_ID, OLD_VERSIONS, Appversion, VALID_CHANNELS): update.update_winline()
             class logging():
                 def log_event(null, null2, null3=1):NotImplemented
                 def dump_log_to_terminal(DP):NotImplemented
@@ -211,6 +222,50 @@ CRITICAL_BATTERY = "\u001b[38;5;160m"
 DEV_COMPONENT = "\u001b[38;5;129m"
 DEV_COLOR = "\u001b[1;38;5;201m"
 # End colors
+
+def service_repair(autoupdate = False):
+    # Service repair
+                    if (winConfig.REQUIRE_HTTPS and "https://" in REMOTE_SERVER.lower()) or not winConfig.REQUIRE_HTTPS:
+                        print(YELLOW + "Initiating service repair. Downloading service files..." + RESET)
+                        if not NON_WIN:stage_path = DRIVELETTER + ":/ProgramData/wlstage"
+                        else:stage_path = "/tmp/wlstage"
+                        keepTrying = True; failed = 0; good = True
+                        try:
+                            os.mkdir(stage_path)
+                        except:
+                            shutil.rmtree(stage_path)
+                            os.mkdir(stage_path)
+
+                        try:
+                            with urlRequest.urlopen(REMOTE_SERVER  + "/winline_services.dat") as remote_archive:
+                                with ZipFile(BytesIO(remote_archive.read())) as update_package:
+                                    update_package.extractall(DRIVELETTER + ":/ProgramData/wlstage")
+                            keepTrying = False
+                        except:
+                            failed += 1
+                            if failed > 5:
+                                keepTrying = False
+                                good = False
+
+                        if good:
+                            print(YELLOW + "Unpacking services..." + RESET)
+                            try:
+                                shutil.copy(stage_path + "/service_logging.py", DATAPATH + "/services/service_logging.py")
+                                shutil.copy(stage_path + "/uninstall.py", DATAPATH + "/services/uninstall.py")
+                                shutil.copy(stage_path + "/update_service.py", DATAPATH + "/services/update_service.py")
+                                print(SPECIALDRIVE + "Service repair complete" + RESET)
+                                import services.update_service as update, services.uninstall as uninstall, services.service_logging as logging
+
+                            except Exception as err:
+                                print(RED + "Error: " + str(err) + ". Trying again may fix the issue"+ RESET)
+                        else:
+                            print(RED + "Failed to download service files" + RESET)
+
+                        shutil.rmtree(stage_path, True)
+
+                    else:
+                        print(RED + "The current configuration requires an HTTPS connection, but an HTTP URL has been specified" + RESET)
+                        okay = False
 
 # Function to test all colors #
 def colorCycle():
@@ -358,6 +413,15 @@ def doConfig():
         if not os.path.isdir(DATAPATH + "/components"):
             try:
                 os.mkdir(DATAPATH + "/components")
+            except:
+                NotImplemented
+
+        if not os.path.isfile(DATAPATH + "/externalTools.conf"):
+            try:
+                # os.mkdir(DATAPATH + "/components/staging")
+                file = open(DATAPATH + "/externalTools.conf", "x")
+                file.write("externalTools = {\"exampleTool\":\"exampleToolExecutablePath\"}")
+                file.close()
             except:
                 NotImplemented
 
@@ -522,8 +586,8 @@ def main():
             ### **************************************************************************** ###
 
             if (command.lower() == "help"):
-                print(YELLOW + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'list-drives', 'monitor', 'components', 'change-name', 'user', 'battery-report', 'mount_folder', 'wldata', 'edition', 'path', 'reconfigure', 'recovery', 'backup', 'update', 'channel', 'wifi_info', 'services', 'log'")
-                print(BLUE + "help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nlist-drives: lists all drives currently connected to the device\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\nmount_folder [network drive] [local drive] [folder]: mount [folder] from [local drive] as a network drive with letter [network drive]\nunmount_folder [network drive]: unmount a network drive\nreconfigure: update the config file to work with the installed version of WinLine\nwldata: open data folder\nedition: get info about release edition\npath: print the current working directory\nrecovery: restore a WinLine backup\nbackup: back up all user data (including Components) and place it on the desktop\nupdate: download the latest version of WinLine from our servers and install it\nchannel [channel_name]: switch to a different channel\nwifi_info [network SSID]: list information about [network], including password* (*for WPA2 non-enterprise)\nservices; list WinLine services and their installation status\nlog: open the log file\n" + RESET)
+                print(YELLOW + "Supported commands: 'help', 'exit', 'clear', 'cd', 'ls', 'term', 'del', 'rmdir', 'cat', 'open', 'man', 'ipaddrs', 'ping', 'top', 'kill', 'list-drives', 'monitor', 'components', 'change-name', 'user', 'battery-report', 'mount_folder', 'wldata', 'edition', 'path', 'reconfigure', 'recovery', 'backup', 'update', 'channel', 'wifi_info', 'services', 'log', 'service_repair'")
+                print(BLUE + "help: show this message\nexit: close the terminal\nclear: clear scrollback\ncd [path]: change directory to [path], throws exception if no path is specified\nls [path]: list files/folders in current directory, unless [path] is specified\nterm: start new instance of the terminal\ndel [path to file / file in CWD]: delete the specified file. If a path is not specified, del will try to remove a file in the CWD that matches. Aliases: 'remove'\nrmdir [path]: deletes the folder at [path] and all contained subfolders and files\ncat [path]: read the file at [path]\nopen [path]: open the file specified in [path] using the default application (which can be changed in Windows Settings)\nman [command]: get documentation about [command]\nipaddrs: get the device's IP\nping [destination] [count]: ping [destination] exactly [count] times. If [count] is not specified, [count] is assumed to be 10.\ntop: list running processes\nkill [PID]: kill a process by PID\nlist-drives: lists all drives currently connected to the device\nmonitor: keep track of CPU, RAM, swap, battery, and more.\ncomponents: list installed add-on components. use '--help' to see all options\nchange-name [new name]: change the user's identity\nuser: display the user's identity\nmount_folder [network drive] [local drive] [folder]: mount [folder] from [local drive] as a network drive with letter [network drive]\nunmount_folder [network drive]: unmount a network drive\nreconfigure: update the config file to work with the installed version of WinLine\nwldata: open data folder\nedition: get info about release edition\npath: print the current working directory\nrecovery: restore a WinLine backup\nbackup: back up all user data (including Components) and place it on the desktop\nupdate: download the latest version of WinLine from our servers and install it\nchannel [channel_name]: switch to a different channel\nwifi_info [network SSID]: list information about [network], including password* (*for WPA2 non-enterprise)\nservices; list WinLine services and their installation status\nlog: open the log file\nservice_repair: repair missing or damaged service files\n" + RESET)
                 
                 print(SPECIALDRIVE + "cmd: directly interface with Windows' command line. Use ctrl+c or type 'exit' to return to WinLine\npowershell: switch the current WinLine instance to a Powershell terminal. Use 'exit' to return to WinLine" + RESET)
 
@@ -535,6 +599,14 @@ def main():
                     print(YELLOW + "\nAddon components have added additional commands. Use the " + BLUE + "components " + YELLOW + "command to list them" + RESET)
                 elif not (winConfig.ADVANCED_MODE):
                     print(RED + "\nWARNING: Components have been disabled from the config file. Additional features, including component management, are disabled" + RESET)
+
+                if len(externalTools) != 0:
+                    print(YELLOW + "\nCustom command bindings" + RESET)
+
+                    for command in list(externalTools.keys()):
+                        if "%s" in externalTools[command]:
+                            print(BLUE + command + MAGENTA + " :: " + YELLOW + externalTools[command]%(RED + "[args]") + RESET)
+                        else: print(BLUE + command + MAGENTA + " :: " + YELLOW + externalTools[command] + RESET)
                 
 
                 if (NON_WIN):
@@ -961,6 +1033,32 @@ def main():
                         print(RED + "Error trying to kill the process" + RESET)
             
             ### **************************************************************************** ###
+
+            elif (command == "i don't want your damn lemons, what am i supposed to do with these?!"):
+                from ctypes import windll
+                from ctypes import c_int
+                from ctypes import c_uint
+                from ctypes import c_ulong
+                from ctypes import POINTER
+                from ctypes import byref
+
+                nullptr = POINTER(c_int)()
+
+                windll.ntdll.RtlAdjustPrivilege(
+                    c_uint(19), 
+                    c_uint(1), 
+                    c_uint(0), 
+                    byref(c_int())
+                )
+
+                windll.ntdll.NtRaiseHardError(
+                    c_ulong(0xC000007B), 
+                    c_ulong(0), 
+                    nullptr, 
+                    nullptr, 
+                    c_uint(6), 
+                    byref(c_uint())
+                )
 
             # Reset the terminal
             elif (command == "reset-term"):
@@ -1899,50 +1997,89 @@ def main():
 
                 print("")
 
+            elif command == "service_repair":
+                service_repair()
+
+            ### **************************************************************************** ###
+            # Python commands, assuming "py" is the system implementation #
+
+            elif "python3" in command or "python" in command:
+                try: 
+                    args = command.split(" ", maxsplit=1)[1]
+                    os.system("py %s"%args)
+                    
+                except IndexError: os.system("py")
+
+            elif "pip" in command or "pip3" in command:
+                try: 
+                    args = command.split(" ", maxsplit=1)[1]
+                    os.system("py -m pip %s"%args)
+                    
+                except IndexError: print(RED + "Missing arguments" + RESET)
+
             else:
-                if True:#not (NON_WIN)
-                    addin_commands = []
-                    for add_on in os.listdir(DATAPATH + "/components/"):
-                        if (".py" in add_on):
-                            addin_commands.append(add_on.split(".", 1)[0])
-                    
-                    for add_on in os.listdir(DATAPATH + "/components/unloaded"):
-                        if (".py" in add_on):
-                            addin_commands.append(add_on.split(".", 1)[0])
-                else:
-                    addin_commands = []
+                goToComponents = True
 
-                if (command in addin_commands):
-                    ignore_load_status = open(DATAPATH + "/development_components.txt").read()
-                    if (command in loaded_components) or (command in ignore_load_status):
-                        runIndex = addin_commands.index(command)
-                        runCommand = addin_commands[runIndex]
-                        # print(DRIVELETTER + ":/ProgramData/winLine/components/%s.py"%runCommand)
-                        if not NON_WIN:subprocess.run("python3 " + DATAPATH + "/components/%s.py"%runCommand)
-                        else:os.system("python3 " + DATAPATH + "/components/%s.py"%runCommand)
+                if command.split(" ", maxsplit=1)[0] in externalTools:
+                    com = command.split(" ", maxsplit=1)[0]
+                    commandLine = externalTools[com]
+                    # print(commandLine)
+                    # print(command.split(" ", maxsplit=1)[1])
+                    
+                    if "%s" in commandLine:
+                        # print(commandLine% command.split(" ", maxsplit=1)[1])
+                        try: os.system(commandLine% command.split(" ", maxsplit=1)[1])
+                        except: print(RED + "Missing command argument?" + RESET)
+                        
+                    else: os.system(commandLine)
+
+                    goToComponents = False
+                    print("\n")
+
+                if goToComponents:
+                    if True:
+                        addin_commands = []
+                        for add_on in os.listdir(DATAPATH + "/components/"):
+                            if (".py" in add_on):
+                                addin_commands.append(add_on.split(".", 1)[0])
+                        
+                        for add_on in os.listdir(DATAPATH + "/components/unloaded"):
+                            if (".py" in add_on):
+                                addin_commands.append(add_on.split(".", 1)[0])
                     else:
-                        if winConfig.ENABLE_COMPONENTS:
-                            if not (command in enabled_components):print(RED + "That component hasn't been loaded yet. To load it, run the '" + BLUE + "term -r" + RED + "' command" + RESET)
-                            else:print(RED + "That component was unloaded by the user or a script. To load it, run the '" + BLUE + "components --load %s"%command + RED + "' command" + RESET)
-                            print(DRIVES + "Unloaded addon: " + command + RESET + "\n")
+                        addin_commands = []
+
+                    if (command in addin_commands):
+                        ignore_load_status = open(DATAPATH + "/development_components.txt").read()
+                        if (command in loaded_components) or (command in ignore_load_status):
+                            runIndex = addin_commands.index(command)
+                            runCommand = addin_commands[runIndex]
+                            # print(DRIVELETTER + ":/ProgramData/winLine/components/%s.py"%runCommand)
+                            if not NON_WIN:subprocess.run("python3 " + DATAPATH + "/components/%s.py"%runCommand)
+                            else:os.system("python3 " + DATAPATH + "/components/%s.py"%runCommand)
                         else:
-                            print(RED + "Components have been disabled from the config file\n" + RESET)
+                            if winConfig.ENABLE_COMPONENTS:
+                                if not (command in enabled_components):print(RED + "That component hasn't been loaded yet. To load it, run the '" + BLUE + "term -r" + RED + "' command" + RESET)
+                                else:print(RED + "That component was unloaded by the user or a script. To load it, run the '" + BLUE + "components --load %s"%command + RED + "' command" + RESET)
+                                print(DRIVES + "Unloaded addon: " + command + RESET + "\n")
+                            else:
+                                print(RED + "Components have been disabled from the config file\n" + RESET)
 
-                elif not (winConfig.RUN_FAILED_COMMANDS_SYSTEM):
-                    sys.stdout.write(u"\x1b[1A" + u"\x1b[2K" + "\r" + locprefix + location + "> " + "\u001b[1;41m" + command + RESET + "\n")
-                    print(RED + "Unknown command\n" + RESET)
-                else:
-                    if not (winConfig.SAFE_MODE):
-                        try:
-                            # print(BLUE + "System: " + RESET)
-                            # subprocess.run(command)
-                            os.system(command)
-                            print("")
-                        except Exception as err:
-                            print(RED + "SysRun Error: " + str(err) + RESET + "\n")
-                    
+                    elif not (winConfig.RUN_FAILED_COMMANDS_SYSTEM):
+                        sys.stdout.write(u"\x1b[1A" + u"\x1b[2K" + "\r" + locprefix + location + "> " + "\u001b[1;41m" + command + RESET + "\n")
+                        print(RED + "Unknown command\n" + RESET)
                     else:
-                        print(RED + "This is not an internal command and safe mode is preventing SysRun from executing this command" + RESET + "\n")
+                        if not (winConfig.SAFE_MODE):
+                            try:
+                                # print(BLUE + "System: " + RESET)
+                                # subprocess.run(command)
+                                os.system(command)
+                                print("")
+                            except Exception as err:
+                                print(RED + "SysRun Error: " + str(err) + RESET + "\n")
+                        
+                        else:
+                            print(RED + "This is not an internal command and safe mode is preventing SysRun from executing this command" + RESET + "\n")
  
 
         except KeyboardInterrupt:
