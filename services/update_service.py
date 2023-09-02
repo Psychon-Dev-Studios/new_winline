@@ -57,8 +57,8 @@ def update_winline(winConfig, REMOTE_SERVER, NON_WIN, DRIVELETTER, DATAPATH, VER
         okay = False
 
     if okay:
-        server_version = server_version.split("\n")[0]
-        if (server_version != VERSION_ID) and not server_version in OLD_VERSIONS:
+        server_version = server_version.split("\n")[0].strip()
+        if (server_version != Appversion) and not server_version in OLD_VERSIONS:
             print(YELLOW + "You are currently using WinLine " + SEAFOAM + Appversion + YELLOW + ", and version " + SEAFOAM + server_version + YELLOW + " is available" + RESET)
             print(DEV_COLOR + "The update will be pulled from the " + SPECIALDRIVE + CHANNEL + DEV_COLOR + " channel")
             cinst = input(BLUE + "Do you want to update? [Y/N] > " + RESET).capitalize()
@@ -240,8 +240,9 @@ def update_winline_no_prompt(winConfig, REMOTE_SERVER, NON_WIN, DRIVELETTER, DAT
                             good = False
 
                     if good:
-                        print(YELLOW + "Updating services..." + RESET)
+                        logging.log_event("Installing service updates", DATAPATH, 1)
                         try:
+                            if not os.path.isdir(DATAPATH + "/services"): os.mkdir(DATAPATH + "/services")
                             shutil.copy(stage_path + "/service_logging.py", DATAPATH + "/services/service_logging.py")
                             shutil.copy(stage_path + "/uninstall.py", DATAPATH + "/services/uninstall.py")
                             shutil.copy(stage_path + "/update_service.py", DATAPATH + "/services/update_service.py")
