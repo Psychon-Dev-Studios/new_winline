@@ -38,6 +38,7 @@ def get_updates(local_version, auto):
 		try: 
 			shutil.copytree(STAGE_PATH, DATAPATH, dirs_exist_ok=True)
 			if not auto: print(SEAFOAM + "Update complete! " + YELLOW + "Restart WinLine to see new features" + RESET)
+			log_event("Update finished", 1)
 
 			shutil.rmtree(STAGE_PATH)
 		except Exception as err:
@@ -48,7 +49,7 @@ def check_updates(local_version):
 	try: 
 		latest_version = str(requests.urlopen(SERVER_URL + "/version").read(), "'UTF-8'")
 
-		return (local_version < latest_version)
+		return (float(local_version) < float(latest_version))
 
 	except Exception as err:
 		log_event("UPDATE_CHECK_FAILED: %s"%str(err), 3)

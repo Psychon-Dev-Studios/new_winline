@@ -11,6 +11,7 @@ VERSION_ID = "4.0"
 IGNORE_OS = True
 
 # Imports
+from genericpath import isdir
 import os
 
 # From 3.16ish onward, Linux is no longer supported ((even though I'm literally developing this in Linux))
@@ -29,6 +30,7 @@ from resources.config import *
 
 from scripts.log import configureLogging, log_event
 import scripts.setup as setup
+import scripts.update as update_util
 
 # More constants
 DRIVELETTER = str(os.environ['WINDIR'].split(":\\")[0])
@@ -61,6 +63,10 @@ def main():
 			command = input(iprompt%location)
 
 			match command.split(" ")[0]:
+				case "ls": 
+					try: os.system("dir %s"%command.split(" ", maxsplit=1)[1])
+					except: os.system("dir")
+
 				case "help":
 					print(YELLOW + "Most commands are provided by the system. However, the ones listed here are handled by WinLine" + RESET)
 
@@ -97,9 +103,11 @@ uninstall: uninstall WinLine
 						os.system("net use %s: \"\\\\localhost\\%s$\\%s\" /persistent:yes"%(drive,sysd,folder))
 
 					except IndexError:
-						print(YELLOW + "Usage: mount_folder c \"users/epic/path\" x")
+						print(YELLOW + "Usage: mount_folder c \"users/super epic/path\" x")
 
 				case "unmount_folder": os.system("net use %s: /D"%command.split()[1])
+
+				case "update": update_util.get_updates(VERSION_ID, False)
 
 				case _: os.system(command)
 
@@ -111,8 +119,10 @@ uninstall: uninstall WinLine
 			print(RED + str(err) + RESET)
 			log_event(str(err), 3)
 
-try: main()
+try:
+	if os.path.isfile(DATAPATH + "/config/updates"): Thread(name="Winline Updates", daemon=True, target=update_util.get_updates, args=(VERSION_ID, True)).start()
+	main()
 except Exception as err:
-	print(RED + "UNCAUGHT FATAL EXCEPTION\n\n\n")
+	print(RED + "UNCAUGHT FATAL EXCEPTION\n")
 	log_event(str(err), 4)
 	time.sleep(10)
